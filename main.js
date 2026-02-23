@@ -544,6 +544,14 @@ function createPlaceholderTexture(label) {
 function addPhoto(url, position, rotationY = 0) {
   const group = new THREE.Group();
 
+  const contactShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.2, 1.6),
+    new THREE.ShadowMaterial({ opacity: 0.25 })
+  );
+  contactShadow.rotation.x = -Math.PI / 2;
+  contactShadow.position.y = 0.01;
+  contactShadow.receiveShadow = true;
+
   const maxSide = 1.5;
   const framePadding = 0.1;
   const frameDepth = 0.084;
@@ -672,6 +680,10 @@ function addPhoto(url, position, rotationY = 0) {
   group.add(photo);
   frameMesh.castShadow = true;
   photo.castShadow = true;
+  contactShadow.position.x = position.x;
+  contactShadow.position.z = position.z;
+  scene.add(contactShadow);
+
   group.position.set(position.x, position.y, position.z);
   group.rotation.y = rotationY;
   scene.add(group);
