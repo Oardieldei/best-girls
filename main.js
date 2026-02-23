@@ -28,6 +28,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.physicallyCorrectLights = true;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.68);
@@ -35,7 +37,10 @@ scene.add(ambientLight);
 
 const keyLight = new THREE.SpotLight(0xfff8ee, 220, 28, Math.PI / 4, 0.38, 1.5);
 keyLight.position.set(0, roomHeight - 0.1, 0.4);
-keyLight.castShadow = false;
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.bias = -0.00008;
+keyLight.shadow.normalBias = 0.015;
 scene.add(keyLight);
 
 const fillLight = new THREE.DirectionalLight(0xf0f4ff, 0.42);
@@ -170,7 +175,7 @@ function createPlasterWallMaps() {
   roughCtx.fillStyle = roughGradient;
   roughCtx.fillRect(0, 0, 1024, 1024);
 
-  for (let i = 0; i < 8500; i += 1) {
+  for (let i = 0; i < 7000; i += 1) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
     const radius = 0.25 + Math.random() * 0.9;
@@ -180,9 +185,9 @@ function createPlasterWallMaps() {
     bumpCtx.arc(x, y, radius, 0, Math.PI * 2);
     bumpCtx.fill();
 
-    const wallDust = Math.random() > 0.5 ? 'rgba(74, 72, 66, 0.012)' : 'rgba(243, 243, 238, 0.012)';
+    const wallDust = Math.random() > 0.5 ? 'rgba(74, 72, 66, 0.005)' : 'rgba(243, 243, 238, 0.005)';
     colorCtx.fillStyle = wallDust;
-    colorCtx.fillRect(x, y, 2.2, 2.2);
+    colorCtx.fillRect(x, y, 1.6, 1.6);
   }
 
   for (let i = 0; i < 750; i += 1) {
@@ -197,12 +202,12 @@ function createPlasterWallMaps() {
     bumpCtx.stroke();
   }
 
-  for (let i = 0; i < 280; i += 1) {
+  for (let i = 0; i < 170; i += 1) {
     const x = Math.random() * 1024;
-    const y = 790 + Math.random() * 230;
+    const y = 900 + Math.random() * 120;
     const width = 32 + Math.random() * 110;
     const height = 8 + Math.random() * 24;
-    const alpha = 0.012 + Math.random() * 0.03;
+    const alpha = 0.005 + Math.random() * 0.012;
 
     colorCtx.fillStyle = `rgba(92, 86, 76, ${alpha})`;
     colorCtx.fillRect(x, y, width, height);
@@ -273,7 +278,7 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  colorCtx.fillStyle = '#d4b07a';
+  colorCtx.fillStyle = '#b3aca1';
   colorCtx.fillRect(0, 0, 512, 512);
 
   roughCtx.fillStyle = 'rgb(126, 126, 126)';
@@ -306,6 +311,7 @@ const floor = new THREE.Mesh(
   })
 );
 floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
 scene.add(floor);
 
 const ceilingMaterial = new THREE.MeshStandardMaterial({
@@ -333,6 +339,7 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
   const wall = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMaterial);
   wall.position.set(posX, posY, posZ);
   wall.rotation.y = rotY;
+  wall.receiveShadow = true;
   scene.add(wall);
   return wall;
 }
@@ -343,8 +350,8 @@ createWall(roomDepth, roomHeight, 0.1, -roomWidth / 2, roomHeight / 2, 0, Math.P
 createWall(roomDepth, roomHeight, 0.1, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
 
 const cornerChamferMaterial = wallMaterial.clone();
-const chamferSize = 0.16;
-const chamferDepth = 0.08;
+const chamferSize = 0.07;
+const chamferDepth = 0.035;
 [
   { x: roomWidth / 2 - chamferSize * 0.5, z: roomDepth / 2 - chamferSize * 0.5 },
   { x: -roomWidth / 2 + chamferSize * 0.5, z: roomDepth / 2 - chamferSize * 0.5 },
@@ -453,11 +460,154 @@ function addVentGrille() {
     grille.add(slat);
   }
 
-  grille.position.set(0, roomHeight - 0.44, -roomDepth / 2 + 0.08);
+  grille.position.set(roomWidth / 2 - 0.46, roomHeight - 0.53, -roomDepth / 2 + 0.08);
   scene.add(grille);
 }
 
 addVentGrille();
+
+
+function addPremiumPlant() {
+  const plant = new THREE.Group();
+
+  const stemCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.03, 0.34, 0.02),
+    new THREE.Vector3(-0.02, 0.72, 0.01),
+    new THREE.Vector3(0.01, 1.03, 0)
+  ]);
+  const stem = new THREE.Mesh(
+    new THREE.TubeGeometry(stemCurve, 48, 0.018, 14, false),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x4f7b54,
+      roughness: 0.45,
+      transmission: 0.6,
+      thickness: 0.2
+    })
+  );
+  stem.castShadow = true;
+  stem.receiveShadow = true;
+  plant.add(stem);
+
+  const petalCount = 24;
+  const petalGeometry = new THREE.PlaneGeometry(0.24, 0.1, 1, 1);
+  const petalMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x7dac84,
+    side: THREE.DoubleSide,
+    roughness: 0.32,
+    transmission: 0.6,
+    thickness: 0.2
+  });
+  const petals = new THREE.InstancedMesh(petalGeometry, petalMaterial, petalCount);
+  const dummy = new THREE.Object3D();
+
+  for (let i = 0; i < petalCount; i += 1) {
+    const level = i / petalCount;
+    const angle = level * Math.PI * 4 + Math.random() * 0.6;
+    const radius = 0.06 + level * 0.12;
+    dummy.position.set(Math.cos(angle) * radius, 0.42 + level * 0.53, Math.sin(angle) * radius);
+    const randomAxis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
+    const randomQuat = new THREE.Quaternion().setFromAxisAngle(randomAxis, (Math.random() - 0.5) * 0.9);
+    const faceCenterQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.24 + Math.random() * 0.45, angle + Math.PI / 2, 0));
+    dummy.quaternion.copy(faceCenterQuat).multiply(randomQuat);
+    const scale = 0.8 + Math.random() * 0.45;
+    dummy.scale.set(scale, 0.7 + Math.random() * 0.4, 1);
+    dummy.updateMatrix();
+    petals.setMatrixAt(i, dummy.matrix);
+  }
+  petals.castShadow = true;
+  petals.receiveShadow = true;
+  petals.instanceMatrix.needsUpdate = true;
+  plant.add(petals);
+
+  const pot = new THREE.Group();
+  const outerPot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.24, 0.2, 0.36, 42, 1, true),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x3a3f45,
+      roughness: 0.24,
+      metalness: 0.3,
+      clearcoat: 0.82,
+      clearcoatRoughness: 0.18
+    })
+  );
+  outerPot.castShadow = true;
+  outerPot.receiveShadow = true;
+
+  const potRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.225, 0.02, 16, 60),
+    new THREE.MeshStandardMaterial({ color: 0x767e86, roughness: 0.35, metalness: 0.42 })
+  );
+  potRim.rotation.x = Math.PI / 2;
+  potRim.position.y = 0.18;
+  potRim.castShadow = true;
+
+  const soil = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.2, 0.06, 30),
+    new THREE.MeshStandardMaterial({ color: 0x35281f, roughness: 0.92, metalness: 0 })
+  );
+  soil.position.y = 0.14;
+  soil.receiveShadow = true;
+
+  pot.add(outerPot);
+  pot.add(potRim);
+  pot.add(soil);
+  plant.add(pot);
+
+  plant.position.set(-roomWidth / 2 + 0.72, 0.02, -roomDepth / 2 + 0.84);
+  scene.add(plant);
+}
+
+addPremiumPlant();
+
+function addAirDust() {
+  const dustTextureCanvas = document.createElement('canvas');
+  dustTextureCanvas.width = 64;
+  dustTextureCanvas.height = 64;
+  const ctx = dustTextureCanvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+  gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
+  gradient.addColorStop(0.4, 'rgba(255,255,255,0.45)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(32, 32, 30, 0, Math.PI * 2);
+  ctx.fill();
+
+  const dustTexture = new THREE.CanvasTexture(dustTextureCanvas);
+  dustTexture.colorSpace = THREE.SRGBColorSpace;
+
+  const dustCount = 220;
+  const positions = new Float32Array(dustCount * 3);
+  const offsets = new Float32Array(dustCount);
+  const baseY = new Float32Array(dustCount);
+
+  for (let i = 0; i < dustCount; i += 1) {
+    positions[i * 3] = (Math.random() - 0.5) * (roomWidth - 0.6);
+    positions[i * 3 + 1] = 0.3 + Math.random() * (roomHeight - 0.55);
+    baseY[i] = positions[i * 3 + 1];
+    positions[i * 3 + 2] = (Math.random() - 0.5) * (roomDepth - 0.6);
+    offsets[i] = Math.random() * Math.PI * 2;
+  }
+
+  const dustGeometry = new THREE.BufferGeometry();
+  dustGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const dustMaterial = new THREE.PointsMaterial({
+    map: dustTexture,
+    color: 0xf6f1e8,
+    size: 0.04,
+    transparent: true,
+    opacity: 0.2,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+
+  const dust = new THREE.Points(dustGeometry, dustMaterial);
+  scene.add(dust);
+  return { dust, offsets, baseY };
+}
+
+const dustParticles = addAirDust();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
@@ -496,7 +646,7 @@ function addPhoto(url, position, rotationY = 0) {
     roughnessMap: goldFrameMaps.roughnessMap,
     roughness: 0.29,
     metalness: 0.58,
-    color: 0xd3a86a
+    color: 0xaaa297
   });
 
   function fitByAspect(texture) {
@@ -520,7 +670,7 @@ function addPhoto(url, position, rotationY = 0) {
   const frameMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(), frameMaterial);
   const wallShadow = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.08, depthWrite: false })
   );
   frameGroup.add(wallShadow);
   frameGroup.add(frameMesh);
@@ -598,6 +748,8 @@ function addPhoto(url, position, rotationY = 0) {
 
   group.add(frameGroup);
   group.add(photo);
+  frameMesh.castShadow = true;
+  photo.castShadow = true;
   group.position.set(position.x, position.y, position.z);
   group.rotation.y = rotationY;
   scene.add(group);
@@ -682,6 +834,15 @@ function applyBounds() {
 
 function animate() {
   requestAnimationFrame(animate);
+  const t = performance.now() * 0.001;
+
+  if (dustParticles) {
+    const positions = dustParticles.dust.geometry.attributes.position.array;
+    for (let i = 0; i < dustParticles.offsets.length; i += 1) {
+      positions[i * 3 + 1] = dustParticles.baseY[i] + Math.sin(t + dustParticles.offsets[i]) * 0.0002;
+    }
+    dustParticles.dust.geometry.attributes.position.needsUpdate = true;
+  }
 
   if (controls.isLocked) {
     if (move.forward) controls.moveForward(speed);
