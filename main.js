@@ -32,10 +32,10 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.68);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.52);
 scene.add(ambientLight);
 
-const keyLight = new THREE.SpotLight(0xfff8ee, 220, 28, Math.PI / 4, 0.38, 1.5);
+const keyLight = new THREE.SpotLight(0xfff8ee, 165, 28, Math.PI / 4, 0.38, 1.5);
 keyLight.position.set(0, roomHeight - 0.1, 0.4);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
@@ -43,7 +43,7 @@ keyLight.shadow.bias = -0.00008;
 keyLight.shadow.normalBias = 0.015;
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xf0f4ff, 0.42);
+const fillLight = new THREE.DirectionalLight(0xf0f4ff, 0.3);
 fillLight.position.set(-2, roomHeight * 0.75, 2);
 scene.add(fillLight);
 
@@ -288,8 +288,9 @@ const floor = new THREE.Mesh(
   new THREE.MeshStandardMaterial({
     map: createWoodFloorTexture(),
     roughnessMap: createWoodFloorRoughnessMap(),
-    roughness: 0.48,
-    metalness: 0.06
+    roughness: 0.4,
+    metalness: 0.05,
+    envMapIntensity: 1.5
   })
 );
 floor.rotation.x = -Math.PI / 2;
@@ -402,7 +403,7 @@ function addChandelier(x, z) {
   );
   bulb.position.y = fixtureY - 0.12;
 
-  const glow = new THREE.PointLight(0xffe4b7, 6.5, 2.3, 2.2);
+  const glow = new THREE.PointLight(0xffe4b7, 4.8, 2.3, 2.2);
   glow.position.y = fixtureY - 0.12;
 
   chandelier.add(chain, stem, shade, bulb, glow);
@@ -505,98 +506,6 @@ function addAirDust() {
 }
 
 const dustParticles = addAirDust();
-
-function createRugMaps() {
-  const colorCanvas = document.createElement('canvas');
-  const bumpCanvas = document.createElement('canvas');
-  const roughCanvas = document.createElement('canvas');
-  [colorCanvas, bumpCanvas, roughCanvas].forEach((canvas) => {
-    canvas.width = 1024;
-    canvas.height = 1024;
-  });
-
-  const colorCtx = colorCanvas.getContext('2d');
-  const bumpCtx = bumpCanvas.getContext('2d');
-  const roughCtx = roughCanvas.getContext('2d');
-
-  colorCtx.fillStyle = '#465265';
-  colorCtx.fillRect(0, 0, 1024, 1024);
-
-  colorCtx.save();
-  colorCtx.translate(512, 512);
-  colorCtx.scale(1, 0.72);
-  const bodyGradient = colorCtx.createRadialGradient(0, 0, 60, 0, 0, 430);
-  bodyGradient.addColorStop(0, '#5f7287');
-  bodyGradient.addColorStop(1, '#3f4e60');
-  colorCtx.fillStyle = bodyGradient;
-  colorCtx.beginPath();
-  colorCtx.arc(0, 0, 430, 0, Math.PI * 2);
-  colorCtx.fill();
-
-  colorCtx.lineWidth = 52;
-  colorCtx.strokeStyle = '#b89c73';
-  colorCtx.beginPath();
-  colorCtx.arc(0, 0, 404, 0, Math.PI * 2);
-  colorCtx.stroke();
-
-  colorCtx.lineWidth = 8;
-  colorCtx.strokeStyle = 'rgba(243, 231, 204, 0.55)';
-  colorCtx.beginPath();
-  colorCtx.arc(0, 0, 366, 0, Math.PI * 2);
-  colorCtx.stroke();
-  colorCtx.restore();
-
-  bumpCtx.fillStyle = 'rgb(132,132,132)';
-  bumpCtx.fillRect(0, 0, 1024, 1024);
-  roughCtx.fillStyle = 'rgb(138,138,138)';
-  roughCtx.fillRect(0, 0, 1024, 1024);
-
-  for (let i = 0; i < 15000; i += 1) {
-    const x = Math.random() * 1024;
-    const y = Math.random() * 1024;
-    const fiber = 120 + Math.random() * 35;
-    bumpCtx.fillStyle = `rgb(${fiber}, ${fiber}, ${fiber})`;
-    bumpCtx.fillRect(x, y, 1.3 + Math.random() * 1.2, 1.3 + Math.random() * 1.2);
-
-    const rough = 124 + Math.random() * 18;
-    roughCtx.fillStyle = `rgb(${rough}, ${rough}, ${rough})`;
-    roughCtx.fillRect(x, y, 1.5, 1.5);
-  }
-
-  const map = new THREE.CanvasTexture(colorCanvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
-  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
-
-  [map, bumpMap, roughnessMap].forEach((texture) => {
-    texture.anisotropy = maxAnisotropy;
-  });
-
-  return { map, bumpMap, roughnessMap };
-}
-
-function addFloorRug() {
-  const rugMaps = createRugMaps();
-  const rug = new THREE.Mesh(
-    new THREE.CircleGeometry(1.45, 100),
-    new THREE.MeshStandardMaterial({
-      map: rugMaps.map,
-      bumpMap: rugMaps.bumpMap,
-      bumpScale: 0.04,
-      roughnessMap: rugMaps.roughnessMap,
-      roughness: 0.92,
-      metalness: 0
-    })
-  );
-
-  rug.rotation.x = -Math.PI / 2;
-  rug.scale.set(1, 0.72, 1);
-  rug.position.set(0, 0.012, 0);
-  rug.receiveShadow = true;
-  scene.add(rug);
-}
-
-addFloorRug();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
