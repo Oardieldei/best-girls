@@ -356,33 +356,36 @@ addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMa
 
 function addChandelier(x, z) {
   const chandelier = new THREE.Group();
+  const wireLength = 0.15;
+  const hangingTopY = roomHeight - wireLength / 2;
+  const fixtureY = roomHeight - wireLength;
 
   const chain = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.015, 0.015, 0.44, 10),
+    new THREE.CylinderGeometry(0.012, 0.012, wireLength, 10),
     new THREE.MeshStandardMaterial({ color: 0x8f6b3a, roughness: 0.48, metalness: 0.55 })
   );
-  chain.position.y = roomHeight - 0.24;
+  chain.position.y = hangingTopY;
 
   const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.02, 0.18, 12),
+    new THREE.CylinderGeometry(0.026, 0.018, 0.12, 12),
     new THREE.MeshStandardMaterial({ color: 0x9f7640, roughness: 0.42, metalness: 0.58 })
   );
-  stem.position.y = roomHeight - 0.53;
+  stem.position.y = fixtureY - 0.06;
 
   const shade = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.SphereGeometry(0.12, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
     new THREE.MeshStandardMaterial({ color: 0xf4e7cc, roughness: 0.32, metalness: 0 })
   );
-  shade.position.y = roomHeight - 0.64;
+  shade.position.y = fixtureY - 0.13;
 
   const bulb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.05, 12, 12),
+    new THREE.SphereGeometry(0.038, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xfff2d6 })
   );
-  bulb.position.y = roomHeight - 0.62;
+  bulb.position.y = fixtureY - 0.12;
 
-  const glow = new THREE.PointLight(0xffe4b7, 26, 3.2, 1.8);
-  glow.position.y = roomHeight - 0.62;
+  const glow = new THREE.PointLight(0xffe4b7, 6.5, 2.3, 2.2);
+  glow.position.y = fixtureY - 0.12;
 
   chandelier.add(chain, stem, shade, bulb, glow);
   chandelier.position.set(x, 0, z);
@@ -397,6 +400,69 @@ const chandelierOffsetZ = roomDepth * 0.3;
   { x: -chandelierOffsetX, z: chandelierOffsetZ },
   { x: chandelierOffsetX, z: chandelierOffsetZ }
 ].forEach(({ x, z }) => addChandelier(x, z));
+
+function addFloorPlant() {
+  const plant = new THREE.Group();
+
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.17, 0.36, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0x7f4e37,
+      roughness: 0.88,
+      metalness: 0.03
+    })
+  );
+  pot.position.y = 0.18;
+
+  const soil = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.162, 0.162, 0.03, 24),
+    new THREE.MeshStandardMaterial({ color: 0x3d2a1f, roughness: 1, metalness: 0 })
+  );
+  soil.position.y = 0.34;
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.04, 0.98, 12),
+    new THREE.MeshStandardMaterial({ color: 0x5b3f2a, roughness: 0.9, metalness: 0.02 })
+  );
+  trunk.position.y = 0.85;
+
+  function createLeafCluster(size, color) {
+    const cluster = new THREE.Group();
+    const leafGeometry = new THREE.SphereGeometry(size, 16, 14);
+    const leafMaterial = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.6,
+      metalness: 0.02
+    });
+
+    for (let i = 0; i < 24; i += 1) {
+      const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 0.12 + Math.random() * 0.28;
+      const y = (Math.random() - 0.5) * 0.44;
+      leaf.scale.set(1, 0.55 + Math.random() * 0.35, 0.9 + Math.random() * 0.45);
+      leaf.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+      cluster.add(leaf);
+    }
+
+    return cluster;
+  }
+
+  const lowerLeaves = createLeafCluster(0.11, 0x2d5e34);
+  lowerLeaves.position.y = 1.05;
+
+  const middleLeaves = createLeafCluster(0.12, 0x376f3f);
+  middleLeaves.position.y = 1.35;
+
+  const upperLeaves = createLeafCluster(0.1, 0x2f6438);
+  upperLeaves.position.y = 1.64;
+
+  plant.add(pot, soil, trunk, lowerLeaves, middleLeaves, upperLeaves);
+  plant.position.set(-roomWidth / 2 + 0.52, 0, roomDepth / 2 - 0.62);
+  scene.add(plant);
+}
+
+addFloorPlant();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
@@ -424,7 +490,7 @@ function addPhoto(url, position, rotationY = 0) {
   const maxSide = 1.5;
   const framePadding = 0.1;
   const frameDepth = 0.12;
-  const frameWidth = 0.065;
+  const frameWidth = 0.045;
   const frameCornerRadius = 0.05;
 
   const goldFrameMaps = createGoldFrameMaterialMaps();
