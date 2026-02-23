@@ -197,6 +197,20 @@ function createPlasterWallMaps() {
     bumpCtx.stroke();
   }
 
+  for (let i = 0; i < 280; i += 1) {
+    const x = Math.random() * 1024;
+    const y = 790 + Math.random() * 230;
+    const width = 32 + Math.random() * 110;
+    const height = 8 + Math.random() * 24;
+    const alpha = 0.012 + Math.random() * 0.03;
+
+    colorCtx.fillStyle = `rgba(92, 86, 76, ${alpha})`;
+    colorCtx.fillRect(x, y, width, height);
+
+    roughCtx.fillStyle = `rgba(188, 188, 188, ${0.03 + Math.random() * 0.05})`;
+    roughCtx.fillRect(x, y, width, height);
+  }
+
   const colorMap = new THREE.CanvasTexture(colorCanvas);
   colorMap.colorSpace = THREE.SRGBColorSpace;
   const bumpMap = new THREE.CanvasTexture(bumpCanvas);
@@ -259,7 +273,7 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  colorCtx.fillStyle = '#b8894a';
+  colorCtx.fillStyle = '#d4b07a';
   colorCtx.fillRect(0, 0, 512, 512);
 
   roughCtx.fillStyle = 'rgb(126, 126, 126)';
@@ -327,6 +341,21 @@ createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, -roomDepth / 2);
 createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, roomDepth / 2);
 createWall(roomDepth, roomHeight, 0.1, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
 createWall(roomDepth, roomHeight, 0.1, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+
+const cornerChamferMaterial = wallMaterial.clone();
+const chamferSize = 0.16;
+const chamferDepth = 0.08;
+[
+  { x: roomWidth / 2 - chamferSize * 0.5, z: roomDepth / 2 - chamferSize * 0.5 },
+  { x: -roomWidth / 2 + chamferSize * 0.5, z: roomDepth / 2 - chamferSize * 0.5 },
+  { x: roomWidth / 2 - chamferSize * 0.5, z: -roomDepth / 2 + chamferSize * 0.5 },
+  { x: -roomWidth / 2 + chamferSize * 0.5, z: -roomDepth / 2 + chamferSize * 0.5 }
+].forEach(({ x, z }) => {
+  const chamfer = new THREE.Mesh(new THREE.BoxGeometry(chamferSize, roomHeight, chamferDepth), cornerChamferMaterial);
+  chamfer.position.set(x, roomHeight / 2, z);
+  chamfer.rotation.y = Math.PI / 4;
+  scene.add(chamfer);
+});
 
 const trimMaterial = new THREE.MeshStandardMaterial({ color: 0xbf8742, roughness: 0.45, metalness: 0.08 });
 const baseboardHeight = 0.1;
@@ -401,68 +430,34 @@ const chandelierOffsetZ = roomDepth * 0.3;
   { x: chandelierOffsetX, z: chandelierOffsetZ }
 ].forEach(({ x, z }) => addChandelier(x, z));
 
-function addFloorPlant() {
-  const plant = new THREE.Group();
+function addVentGrille() {
+  const grille = new THREE.Group();
+  const outerWidth = 0.64;
+  const outerHeight = 0.28;
+  const frameDepth = 0.03;
 
-  const pot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.17, 0.36, 32),
-    new THREE.MeshStandardMaterial({
-      color: 0x7f4e37,
-      roughness: 0.88,
-      metalness: 0.03
-    })
+  const frame = new THREE.Mesh(
+    new THREE.BoxGeometry(outerWidth, outerHeight, frameDepth),
+    new THREE.MeshStandardMaterial({ color: 0xdee2e6, roughness: 0.62, metalness: 0.12 })
   );
-  pot.position.y = 0.18;
+  grille.add(frame);
 
-  const soil = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.162, 0.162, 0.03, 24),
-    new THREE.MeshStandardMaterial({ color: 0x3d2a1f, roughness: 1, metalness: 0 })
-  );
-  soil.position.y = 0.34;
-
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.04, 0.98, 12),
-    new THREE.MeshStandardMaterial({ color: 0x5b3f2a, roughness: 0.9, metalness: 0.02 })
-  );
-  trunk.position.y = 0.85;
-
-  function createLeafCluster(size, color) {
-    const cluster = new THREE.Group();
-    const leafGeometry = new THREE.SphereGeometry(size, 16, 14);
-    const leafMaterial = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.6,
-      metalness: 0.02
-    });
-
-    for (let i = 0; i < 24; i += 1) {
-      const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 0.12 + Math.random() * 0.28;
-      const y = (Math.random() - 0.5) * 0.44;
-      leaf.scale.set(1, 0.55 + Math.random() * 0.35, 0.9 + Math.random() * 0.45);
-      leaf.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-      cluster.add(leaf);
-    }
-
-    return cluster;
+  for (let i = 0; i < 6; i += 1) {
+    const slat = new THREE.Mesh(
+      new THREE.BoxGeometry(outerWidth * 0.84, 0.02, 0.012),
+      new THREE.MeshStandardMaterial({ color: 0xc8ced5, roughness: 0.5, metalness: 0.14 })
+    );
+    slat.position.y = -0.085 + i * 0.034;
+    slat.position.z = frameDepth * 0.34;
+    slat.rotation.x = -0.22;
+    grille.add(slat);
   }
 
-  const lowerLeaves = createLeafCluster(0.11, 0x2d5e34);
-  lowerLeaves.position.y = 1.05;
-
-  const middleLeaves = createLeafCluster(0.12, 0x376f3f);
-  middleLeaves.position.y = 1.35;
-
-  const upperLeaves = createLeafCluster(0.1, 0x2f6438);
-  upperLeaves.position.y = 1.64;
-
-  plant.add(pot, soil, trunk, lowerLeaves, middleLeaves, upperLeaves);
-  plant.position.set(-roomWidth / 2 + 0.52, 0, roomDepth / 2 - 0.62);
-  scene.add(plant);
+  grille.position.set(0, roomHeight - 0.44, -roomDepth / 2 + 0.08);
+  scene.add(grille);
 }
 
-addFloorPlant();
+addVentGrille();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
@@ -499,9 +494,9 @@ function addPhoto(url, position, rotationY = 0) {
     bumpMap: goldFrameMaps.bumpMap,
     bumpScale: 0.035,
     roughnessMap: goldFrameMaps.roughnessMap,
-    roughness: 0.33,
-    metalness: 0.62,
-    color: 0xb8894a
+    roughness: 0.29,
+    metalness: 0.58,
+    color: 0xd3a86a
   });
 
   function fitByAspect(texture) {
@@ -523,6 +518,11 @@ function addPhoto(url, position, rotationY = 0) {
 
   const frameGroup = new THREE.Group();
   const frameMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(), frameMaterial);
+  const wallShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false })
+  );
+  frameGroup.add(wallShadow);
   frameGroup.add(frameMesh);
 
   function roundedRectShape(width, height, radius) {
@@ -568,6 +568,9 @@ function addPhoto(url, position, rotationY = 0) {
       curveSegments: 24
     });
     frameMesh.geometry.center();
+
+    wallShadow.geometry.dispose();
+    wallShadow.geometry = new THREE.PlaneGeometry(outerWidth + 0.03, outerHeight + 0.03);
   }
 
   textureLoader.load(
@@ -589,8 +592,9 @@ function addPhoto(url, position, rotationY = 0) {
     }
   );
 
-  photo.position.z = -0.02;
-  frameGroup.position.z = -frameDepth * 0.5;
+  photo.position.z = 0.055;
+  frameGroup.position.z = 0.025;
+  wallShadow.position.z = -0.012;
 
   group.add(frameGroup);
   group.add(photo);
