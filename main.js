@@ -259,47 +259,14 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  const goldGradient = colorCtx.createLinearGradient(0, 0, 512, 0);
-  goldGradient.addColorStop(0, '#f4e49b');
-  goldGradient.addColorStop(0.35, '#ddb75b');
-  goldGradient.addColorStop(0.7, '#f6e6a2');
-  goldGradient.addColorStop(1, '#b98b2c');
-  colorCtx.fillStyle = goldGradient;
+  colorCtx.fillStyle = '#b8894a';
   colorCtx.fillRect(0, 0, 512, 512);
 
-  roughCtx.fillStyle = 'rgb(110, 110, 110)';
+  roughCtx.fillStyle = 'rgb(126, 126, 126)';
   roughCtx.fillRect(0, 0, 512, 512);
 
-  bumpCtx.fillStyle = 'rgb(128, 128, 128)';
+  bumpCtx.fillStyle = 'rgb(132, 132, 132)';
   bumpCtx.fillRect(0, 0, 512, 512);
-
-  for (let y = 0; y < 512; y += 16) {
-    const offset = (y / 16) % 2 ? 8 : 0;
-    for (let x = -16; x < 512; x += 16) {
-      const px = x + offset;
-      const wave = Math.sin((px + y) * 0.028);
-      const lineAlpha = 0.07 + Math.random() * 0.04;
-
-      colorCtx.strokeStyle = `rgba(255, 241, 178, ${lineAlpha})`;
-      colorCtx.lineWidth = 1.1;
-      colorCtx.beginPath();
-      colorCtx.moveTo(px - 7, y + 2 + wave * 1.8);
-      colorCtx.lineTo(px + 9, y + 5 - wave * 1.6);
-      colorCtx.stroke();
-
-      const bumpTone = 126 + Math.random() * 24;
-      bumpCtx.strokeStyle = `rgb(${bumpTone}, ${bumpTone}, ${bumpTone})`;
-      bumpCtx.lineWidth = 1.2;
-      bumpCtx.beginPath();
-      bumpCtx.moveTo(px - 8, y + 2 + wave);
-      bumpCtx.lineTo(px + 9, y + 5 - wave);
-      bumpCtx.stroke();
-
-      const roughValue = 96 + Math.random() * 18;
-      roughCtx.fillStyle = `rgb(${roughValue}, ${roughValue}, ${roughValue})`;
-      roughCtx.fillRect(px - 5, y + 1, 12, 8);
-    }
-  }
 
   const map = new THREE.CanvasTexture(colorCanvas);
   map.colorSpace = THREE.SRGBColorSpace;
@@ -387,6 +354,50 @@ addTrim(new THREE.BoxGeometry(roomWidth, corniceHeight, corniceDepth), corniceMa
 addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, -roomWidth / 2 + 0.08, corniceY, 0);
 addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, roomWidth / 2 - 0.08, corniceY, 0);
 
+function addChandelier(x, z) {
+  const chandelier = new THREE.Group();
+
+  const chain = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.015, 0.015, 0.44, 10),
+    new THREE.MeshStandardMaterial({ color: 0x8f6b3a, roughness: 0.48, metalness: 0.55 })
+  );
+  chain.position.y = roomHeight - 0.24;
+
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.02, 0.18, 12),
+    new THREE.MeshStandardMaterial({ color: 0x9f7640, roughness: 0.42, metalness: 0.58 })
+  );
+  stem.position.y = roomHeight - 0.53;
+
+  const shade = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    new THREE.MeshStandardMaterial({ color: 0xf4e7cc, roughness: 0.32, metalness: 0 })
+  );
+  shade.position.y = roomHeight - 0.64;
+
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xfff2d6 })
+  );
+  bulb.position.y = roomHeight - 0.62;
+
+  const glow = new THREE.PointLight(0xffe4b7, 26, 3.2, 1.8);
+  glow.position.y = roomHeight - 0.62;
+
+  chandelier.add(chain, stem, shade, bulb, glow);
+  chandelier.position.set(x, 0, z);
+  scene.add(chandelier);
+}
+
+const chandelierOffsetX = roomWidth * 0.26;
+const chandelierOffsetZ = roomDepth * 0.3;
+[
+  { x: -chandelierOffsetX, z: -chandelierOffsetZ },
+  { x: chandelierOffsetX, z: -chandelierOffsetZ },
+  { x: -chandelierOffsetX, z: chandelierOffsetZ },
+  { x: chandelierOffsetX, z: chandelierOffsetZ }
+].forEach(({ x, z }) => addChandelier(x, z));
+
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
@@ -411,10 +422,10 @@ function addPhoto(url, position, rotationY = 0) {
   const group = new THREE.Group();
 
   const maxSide = 1.5;
-  const framePadding = 0.14;
+  const framePadding = 0.1;
   const frameDepth = 0.12;
-  const frameWidth = 0.1;
-  const frameCornerRadius = 0.1;
+  const frameWidth = 0.065;
+  const frameCornerRadius = 0.05;
 
   const goldFrameMaps = createGoldFrameMaterialMaps();
   const frameMaterial = new THREE.MeshStandardMaterial({
@@ -424,7 +435,7 @@ function addPhoto(url, position, rotationY = 0) {
     roughnessMap: goldFrameMaps.roughnessMap,
     roughness: 0.33,
     metalness: 0.62,
-    color: 0xf0d98a
+    color: 0xb8894a
   });
 
   function fitByAspect(texture) {
@@ -525,14 +536,14 @@ function addPhoto(url, position, rotationY = 0) {
 const basePath = `images/${galleryId}/`;
 const wallInset = 0.14;
 const photos = [
-  { file: '1.jpg', pos: { x: -1.5, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '2.jpg', pos: { x: 1.5, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: -1.8 }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: 1.8 }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: 1.5, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '6.jpg', pos: { x: -1.5, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: 1.8 }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: -1.8 }, rot: Math.PI / 2 }
+  { file: '1.jpg', pos: { x: -1.1, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '2.jpg', pos: { x: 1.1, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: -1.35 }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: 1.35 }, rot: -Math.PI / 2 },
+  { file: '5.jpg', pos: { x: 1.1, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '6.jpg', pos: { x: -1.1, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: 1.35 }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: -1.35 }, rot: Math.PI / 2 }
 ];
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
