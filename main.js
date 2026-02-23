@@ -175,7 +175,6 @@ function createPlasterWallMaps() {
   roughCtx.fillStyle = roughGradient;
   roughCtx.fillRect(0, 0, 1024, 1024);
 
-  const dirtStartY = 560;
   for (let i = 0; i < 7000; i += 1) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
@@ -185,12 +184,6 @@ function createPlasterWallMaps() {
     bumpCtx.beginPath();
     bumpCtx.arc(x, y, radius, 0, Math.PI * 2);
     bumpCtx.fill();
-
-    if (y >= dirtStartY) {
-      const wallDust = Math.random() > 0.5 ? 'rgba(74, 72, 66, 0.005)' : 'rgba(243, 243, 238, 0.005)';
-      colorCtx.fillStyle = wallDust;
-      colorCtx.fillRect(x, y, 1.6, 1.6);
-    }
   }
 
   for (let i = 0; i < 750; i += 1) {
@@ -203,20 +196,6 @@ function createPlasterWallMaps() {
     bumpCtx.moveTo(x, y);
     bumpCtx.lineTo(x + len, y + (Math.random() - 0.5) * 2);
     bumpCtx.stroke();
-  }
-
-  for (let i = 0; i < 170; i += 1) {
-    const x = Math.random() * 1024;
-    const y = 900 + Math.random() * 120;
-    const width = 32 + Math.random() * 110;
-    const height = 8 + Math.random() * 24;
-    const alpha = 0.005 + Math.random() * 0.012;
-
-    colorCtx.fillStyle = `rgba(92, 86, 76, ${alpha})`;
-    colorCtx.fillRect(x, y, width, height);
-
-    roughCtx.fillStyle = `rgba(188, 188, 188, ${0.03 + Math.random() * 0.05})`;
-    roughCtx.fillRect(x, y, width, height);
   }
 
   const colorMap = new THREE.CanvasTexture(colorCanvas);
@@ -486,7 +465,7 @@ function addAirDust() {
   const dustTexture = new THREE.CanvasTexture(dustTextureCanvas);
   dustTexture.colorSpace = THREE.SRGBColorSpace;
 
-  const dustCount = 220;
+  const dustCount = 88;
   const positions = new Float32Array(dustCount * 3);
   const offsets = new Float32Array(dustCount);
   const velocities = new Float32Array(dustCount * 3);
@@ -501,7 +480,7 @@ function addAirDust() {
     positions[i * 3 + 2] = (Math.random() - 0.5) * (halfDepth * 2);
 
     const dir = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) * 0.3, Math.random() - 0.5).normalize();
-    const speed = 0.0035 + Math.random() * 0.0045;
+    const speed = (0.0035 + Math.random() * 0.0045) / 1.5;
     velocities[i * 3] = dir.x * speed;
     velocities[i * 3 + 1] = dir.y * speed;
     velocities[i * 3 + 2] = dir.z * speed;
@@ -526,6 +505,98 @@ function addAirDust() {
 }
 
 const dustParticles = addAirDust();
+
+function createRugMaps() {
+  const colorCanvas = document.createElement('canvas');
+  const bumpCanvas = document.createElement('canvas');
+  const roughCanvas = document.createElement('canvas');
+  [colorCanvas, bumpCanvas, roughCanvas].forEach((canvas) => {
+    canvas.width = 1024;
+    canvas.height = 1024;
+  });
+
+  const colorCtx = colorCanvas.getContext('2d');
+  const bumpCtx = bumpCanvas.getContext('2d');
+  const roughCtx = roughCanvas.getContext('2d');
+
+  colorCtx.fillStyle = '#465265';
+  colorCtx.fillRect(0, 0, 1024, 1024);
+
+  colorCtx.save();
+  colorCtx.translate(512, 512);
+  colorCtx.scale(1, 0.72);
+  const bodyGradient = colorCtx.createRadialGradient(0, 0, 60, 0, 0, 430);
+  bodyGradient.addColorStop(0, '#5f7287');
+  bodyGradient.addColorStop(1, '#3f4e60');
+  colorCtx.fillStyle = bodyGradient;
+  colorCtx.beginPath();
+  colorCtx.arc(0, 0, 430, 0, Math.PI * 2);
+  colorCtx.fill();
+
+  colorCtx.lineWidth = 52;
+  colorCtx.strokeStyle = '#b89c73';
+  colorCtx.beginPath();
+  colorCtx.arc(0, 0, 404, 0, Math.PI * 2);
+  colorCtx.stroke();
+
+  colorCtx.lineWidth = 8;
+  colorCtx.strokeStyle = 'rgba(243, 231, 204, 0.55)';
+  colorCtx.beginPath();
+  colorCtx.arc(0, 0, 366, 0, Math.PI * 2);
+  colorCtx.stroke();
+  colorCtx.restore();
+
+  bumpCtx.fillStyle = 'rgb(132,132,132)';
+  bumpCtx.fillRect(0, 0, 1024, 1024);
+  roughCtx.fillStyle = 'rgb(138,138,138)';
+  roughCtx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 15000; i += 1) {
+    const x = Math.random() * 1024;
+    const y = Math.random() * 1024;
+    const fiber = 120 + Math.random() * 35;
+    bumpCtx.fillStyle = `rgb(${fiber}, ${fiber}, ${fiber})`;
+    bumpCtx.fillRect(x, y, 1.3 + Math.random() * 1.2, 1.3 + Math.random() * 1.2);
+
+    const rough = 124 + Math.random() * 18;
+    roughCtx.fillStyle = `rgb(${rough}, ${rough}, ${rough})`;
+    roughCtx.fillRect(x, y, 1.5, 1.5);
+  }
+
+  const map = new THREE.CanvasTexture(colorCanvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
+
+  [map, bumpMap, roughnessMap].forEach((texture) => {
+    texture.anisotropy = maxAnisotropy;
+  });
+
+  return { map, bumpMap, roughnessMap };
+}
+
+function addFloorRug() {
+  const rugMaps = createRugMaps();
+  const rug = new THREE.Mesh(
+    new THREE.CircleGeometry(1.45, 100),
+    new THREE.MeshStandardMaterial({
+      map: rugMaps.map,
+      bumpMap: rugMaps.bumpMap,
+      bumpScale: 0.04,
+      roughnessMap: rugMaps.roughnessMap,
+      roughness: 0.92,
+      metalness: 0
+    })
+  );
+
+  rug.rotation.x = -Math.PI / 2;
+  rug.scale.set(1, 0.72, 1);
+  rug.position.set(0, 0.012, 0);
+  rug.receiveShadow = true;
+  scene.add(rug);
+}
+
+addFloorRug();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
@@ -562,9 +633,11 @@ function addPhoto(url, position, rotationY = 0) {
     bumpMap: goldFrameMaps.bumpMap,
     bumpScale: 0.035,
     roughnessMap: goldFrameMaps.roughnessMap,
-    roughness: 0.29,
+    roughness: 0.26,
     metalness: 0.58,
-    color: 0x8a7358
+    color: 0xc3a57f,
+    emissive: 0x3a2b1d,
+    emissiveIntensity: 0.2
   });
 
   function fitByAspect(texture) {
@@ -592,6 +665,11 @@ function addPhoto(url, position, rotationY = 0) {
   );
   frameGroup.add(wallShadow);
   frameGroup.add(frameMesh);
+
+  const backLight = new THREE.RectAreaLight(0xffedcf, 0.85, 1.6, 1.1);
+  backLight.position.set(0, 0, -0.055);
+  backLight.lookAt(0, 0, -1);
+  frameGroup.add(backLight);
 
   function roundedRectShape(width, height, radius) {
     const shape = new THREE.Shape();
