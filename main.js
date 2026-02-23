@@ -148,10 +148,20 @@ function createPlasterWallMaps() {
   const roughCtx = roughnessCanvas.getContext('2d');
 
   const gradient = colorCtx.createLinearGradient(0, 1024, 0, 0);
-  gradient.addColorStop(0, '#b9bec2');
-  gradient.addColorStop(0.45, '#c7ccd0');
-  gradient.addColorStop(1, '#d8d9d2');
+  gradient.addColorStop(0, '#b6bcc1');
+  gradient.addColorStop(0.38, '#c3c9ce');
+  gradient.addColorStop(0.72, '#cfd3d0');
+  gradient.addColorStop(1, '#dadcd4');
   colorCtx.fillStyle = gradient;
+  colorCtx.fillRect(0, 0, 1024, 1024);
+
+  const sideGradient = colorCtx.createLinearGradient(0, 0, 1024, 0);
+  sideGradient.addColorStop(0, 'rgba(104, 112, 120, 0.085)');
+  sideGradient.addColorStop(0.28, 'rgba(255, 255, 255, 0.015)');
+  sideGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+  sideGradient.addColorStop(0.72, 'rgba(255, 255, 255, 0.015)');
+  sideGradient.addColorStop(1, 'rgba(97, 106, 112, 0.085)');
+  colorCtx.fillStyle = sideGradient;
   colorCtx.fillRect(0, 0, 1024, 1024);
 
   const roughGradient = roughCtx.createLinearGradient(0, 1024, 0, 0);
@@ -249,11 +259,11 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  const goldGradient = colorCtx.createLinearGradient(0, 0, 512, 512);
-  goldGradient.addColorStop(0, '#f1dc89');
-  goldGradient.addColorStop(0.35, '#d8b04b');
-  goldGradient.addColorStop(0.7, '#f4df95');
-  goldGradient.addColorStop(1, '#ba8d2c');
+  const goldGradient = colorCtx.createLinearGradient(0, 0, 512, 0);
+  goldGradient.addColorStop(0, '#f4e49b');
+  goldGradient.addColorStop(0.35, '#ddb75b');
+  goldGradient.addColorStop(0.7, '#f6e6a2');
+  goldGradient.addColorStop(1, '#b98b2c');
   colorCtx.fillStyle = goldGradient;
   colorCtx.fillRect(0, 0, 512, 512);
 
@@ -263,23 +273,31 @@ function createGoldFrameMaterialMaps() {
   bumpCtx.fillStyle = 'rgb(128, 128, 128)';
   bumpCtx.fillRect(0, 0, 512, 512);
 
-  for (let y = 0; y < 512; y += 28) {
-    for (let x = 0; x < 512; x += 28) {
-      const r = 7 + Math.random() * 4;
-      bumpCtx.fillStyle = `rgb(${150 + Math.random() * 30}, ${150 + Math.random() * 30}, ${150 + Math.random() * 30})`;
-      bumpCtx.beginPath();
-      bumpCtx.arc(x + 14, y + 14, r, 0, Math.PI * 2);
-      bumpCtx.fill();
+  for (let y = 0; y < 512; y += 16) {
+    const offset = (y / 16) % 2 ? 8 : 0;
+    for (let x = -16; x < 512; x += 16) {
+      const px = x + offset;
+      const wave = Math.sin((px + y) * 0.028);
+      const lineAlpha = 0.07 + Math.random() * 0.04;
 
-      colorCtx.strokeStyle = `rgba(255, 238, 170, ${0.11 + Math.random() * 0.1})`;
-      colorCtx.lineWidth = 1.4;
+      colorCtx.strokeStyle = `rgba(255, 241, 178, ${lineAlpha})`;
+      colorCtx.lineWidth = 1.1;
       colorCtx.beginPath();
-      colorCtx.arc(x + 14, y + 14, r - 1.5, 0, Math.PI * 2);
+      colorCtx.moveTo(px - 7, y + 2 + wave * 1.8);
+      colorCtx.lineTo(px + 9, y + 5 - wave * 1.6);
       colorCtx.stroke();
 
-      const roughValue = 92 + Math.random() * 20;
+      const bumpTone = 126 + Math.random() * 24;
+      bumpCtx.strokeStyle = `rgb(${bumpTone}, ${bumpTone}, ${bumpTone})`;
+      bumpCtx.lineWidth = 1.2;
+      bumpCtx.beginPath();
+      bumpCtx.moveTo(px - 8, y + 2 + wave);
+      bumpCtx.lineTo(px + 9, y + 5 - wave);
+      bumpCtx.stroke();
+
+      const roughValue = 96 + Math.random() * 18;
       roughCtx.fillStyle = `rgb(${roughValue}, ${roughValue}, ${roughValue})`;
-      roughCtx.fillRect(x + 4, y + 4, 20, 20);
+      roughCtx.fillRect(px - 5, y + 1, 12, 8);
     }
   }
 
@@ -290,7 +308,7 @@ function createGoldFrameMaterialMaps() {
 
   [map, bumpMap, roughnessMap].forEach((texture) => {
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(3, 1.5);
+    texture.repeat.set(1.4, 1.4);
     texture.anisotropy = maxAnisotropy;
   });
 
@@ -393,9 +411,10 @@ function addPhoto(url, position, rotationY = 0) {
   const group = new THREE.Group();
 
   const maxSide = 1.5;
-  const framePadding = 0.11;
-  const frameDepth = 0.06;
-  const frameWidth = 0.07;
+  const framePadding = 0.14;
+  const frameDepth = 0.12;
+  const frameWidth = 0.1;
+  const frameCornerRadius = 0.1;
 
   const goldFrameMaps = createGoldFrameMaterialMaps();
   const frameMaterial = new THREE.MeshStandardMaterial({
@@ -426,12 +445,26 @@ function addPhoto(url, position, rotationY = 0) {
   photo.material.polygonOffsetUnits = -1;
 
   const frameGroup = new THREE.Group();
+  const frameMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(), frameMaterial);
+  frameGroup.add(frameMesh);
 
-  const topFrame = new THREE.Mesh(new THREE.BoxGeometry(maxSide + framePadding, frameWidth, frameDepth), frameMaterial);
-  const bottomFrame = new THREE.Mesh(new THREE.BoxGeometry(maxSide + framePadding, frameWidth, frameDepth), frameMaterial);
-  const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(frameWidth, maxSide + framePadding - frameWidth * 2, frameDepth), frameMaterial);
-  const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(frameWidth, maxSide + framePadding - frameWidth * 2, frameDepth), frameMaterial);
-  frameGroup.add(topFrame, bottomFrame, leftFrame, rightFrame);
+  function roundedRectShape(width, height, radius) {
+    const shape = new THREE.Shape();
+    const hw = width / 2;
+    const hh = height / 2;
+    const r = Math.min(radius, hw, hh);
+
+    shape.moveTo(-hw + r, -hh);
+    shape.lineTo(hw - r, -hh);
+    shape.quadraticCurveTo(hw, -hh, hw, -hh + r);
+    shape.lineTo(hw, hh - r);
+    shape.quadraticCurveTo(hw, hh, hw - r, hh);
+    shape.lineTo(-hw + r, hh);
+    shape.quadraticCurveTo(-hw, hh, -hw, hh - r);
+    shape.lineTo(-hw, -hh + r);
+    shape.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+    return shape;
+  }
 
   function applySize(texture) {
     const { width, height } = fitByAspect(texture);
@@ -439,21 +472,25 @@ function addPhoto(url, position, rotationY = 0) {
     photo.geometry.dispose();
     photo.geometry = new THREE.PlaneGeometry(width, height);
 
-    topFrame.geometry.dispose();
-    topFrame.geometry = new THREE.BoxGeometry(width + framePadding, frameWidth, frameDepth);
-    topFrame.position.y = height / 2 + framePadding / 2 - frameWidth / 2;
+    const outerWidth = width + framePadding;
+    const outerHeight = height + framePadding;
+    const innerWidth = Math.max(0.05, outerWidth - frameWidth * 2);
+    const innerHeight = Math.max(0.05, outerHeight - frameWidth * 2);
 
-    bottomFrame.geometry.dispose();
-    bottomFrame.geometry = new THREE.BoxGeometry(width + framePadding, frameWidth, frameDepth);
-    bottomFrame.position.y = -height / 2 - framePadding / 2 + frameWidth / 2;
+    const outerShape = roundedRectShape(outerWidth, outerHeight, frameCornerRadius);
+    const innerShape = roundedRectShape(innerWidth, innerHeight, Math.max(0.025, frameCornerRadius - frameWidth * 0.55));
+    outerShape.holes = [innerShape];
 
-    leftFrame.geometry.dispose();
-    leftFrame.geometry = new THREE.BoxGeometry(frameWidth, height + framePadding - frameWidth * 2, frameDepth);
-    leftFrame.position.x = -width / 2 - framePadding / 2 + frameWidth / 2;
-
-    rightFrame.geometry.dispose();
-    rightFrame.geometry = new THREE.BoxGeometry(frameWidth, height + framePadding - frameWidth * 2, frameDepth);
-    rightFrame.position.x = width / 2 + framePadding / 2 - frameWidth / 2;
+    frameMesh.geometry.dispose();
+    frameMesh.geometry = new THREE.ExtrudeGeometry(outerShape, {
+      depth: frameDepth,
+      bevelEnabled: true,
+      bevelThickness: 0.018,
+      bevelSize: 0.022,
+      bevelSegments: 3,
+      curveSegments: 24
+    });
+    frameMesh.geometry.center();
   }
 
   textureLoader.load(
@@ -475,8 +512,8 @@ function addPhoto(url, position, rotationY = 0) {
     }
   );
 
-  photo.position.z = 0.002;
-  frameGroup.position.z = -0.03;
+  photo.position.z = -0.02;
+  frameGroup.position.z = -frameDepth * 0.5;
 
   group.add(frameGroup);
   group.add(photo);
@@ -508,8 +545,9 @@ controls.addEventListener('unlock', () => document.body.classList.remove('is-loc
 
 const move = { forward: false, back: false, left: false, right: false };
 const speed = 0.055;
-const gravity = 0.012;
-const jumpVelocity = 0.16;
+const gravity = 0.0108;
+const apexGravity = 0.0048;
+const jumpVelocity = 0.158;
 let verticalVelocity = 0;
 let isJumping = false;
 
@@ -547,7 +585,8 @@ function applyBounds() {
   camera.position.z = clamp(camera.position.z, -roomDepth / 2 + playerMargin, roomDepth / 2 -playerMargin);
 
   if (isJumping) {
-    verticalVelocity -= gravity;
+    const nearApex = verticalVelocity > 0 && verticalVelocity < 0.045;
+    verticalVelocity -= nearApex ? apexGravity : gravity;
     camera.position.y += verticalVelocity;
 
     if (camera.position.y <= playerHeight) {
