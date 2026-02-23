@@ -26,6 +26,7 @@ camera.position.set(0, playerHeight, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
@@ -71,6 +72,7 @@ createWall(roomDepth, roomHeight, 0.1, -roomWidth / 2, roomHeight / 2, 0, Math.P
 createWall(roomDepth, roomHeight, 0.1, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
 
 const textureLoader = new THREE.TextureLoader();
+const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 
 function createPlaceholderTexture(label) {
   const canvas = document.createElement('canvas');
@@ -109,8 +111,12 @@ function addPhoto(url, position, rotationY = 0) {
 
   const photo = new THREE.Mesh(
     new THREE.PlaneGeometry(maxSide, maxSide),
-    new THREE.MeshStandardMaterial({ color: 0xffffff })
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
+
+  photo.material.polygonOffset = true;
+  photo.material.polygonOffsetFactor = -1;
+  photo.material.polygonOffsetUnits = -1;
 
   const frame = new THREE.Mesh(
     new THREE.BoxGeometry(maxSide + framePadding, maxSide + framePadding, frameDepth),
@@ -131,6 +137,7 @@ function addPhoto(url, position, rotationY = 0) {
     url,
     (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = maxAnisotropy;
       applySize(texture);
       photo.material.map = texture;
       photo.material.needsUpdate = true;
@@ -138,12 +145,14 @@ function addPhoto(url, position, rotationY = 0) {
     undefined,
     () => {
       const placeholder = createPlaceholderTexture(url.split('/').pop());
+      placeholder.anisotropy = maxAnisotropy;
       applySize(placeholder);
       photo.material.map = placeholder;
       photo.material.needsUpdate = true;
     }
   );
 
+  photo.position.z = 0.002;
   frame.position.z = -0.03;
 
   group.add(frame);
