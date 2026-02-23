@@ -95,29 +95,55 @@ function createPlaceholderTexture(label) {
 function addPhoto(url, position, rotationY = 0) {
   const group = new THREE.Group();
 
+  const maxSide = 1.5;
+  const framePadding = 0.08;
+  const frameDepth = 0.06;
+
+  function fitByAspect(texture) {
+    const aspect = texture.image.width / texture.image.height;
+    if (aspect >= 1) {
+      return { width: maxSide, height: maxSide / aspect };
+    }
+    return { width: maxSide * aspect, height: maxSide };
+  }
+
   const photo = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 1),
+    new THREE.PlaneGeometry(maxSide, maxSide),
     new THREE.MeshStandardMaterial({ color: 0xffffff })
   );
+
+  const frame = new THREE.Mesh(
+    new THREE.BoxGeometry(maxSide + framePadding, maxSide + framePadding, frameDepth),
+    new THREE.MeshStandardMaterial({ color: 0x161616, metalness: 0.15, roughness: 0.7 })
+  );
+
+  function applySize(texture) {
+    const { width, height } = fitByAspect(texture);
+
+    photo.geometry.dispose();
+    photo.geometry = new THREE.PlaneGeometry(width, height);
+
+    frame.geometry.dispose();
+    frame.geometry = new THREE.BoxGeometry(width + framePadding, height + framePadding, frameDepth);
+  }
 
   textureLoader.load(
     url,
     (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
+      applySize(texture);
       photo.material.map = texture;
       photo.material.needsUpdate = true;
     },
     undefined,
     () => {
-      photo.material.map = createPlaceholderTexture(url.split('/').pop());
+      const placeholder = createPlaceholderTexture(url.split('/').pop());
+      applySize(placeholder);
+      photo.material.map = placeholder;
       photo.material.needsUpdate = true;
     }
   );
 
-  const frame = new THREE.Mesh(
-    new THREE.BoxGeometry(1.58, 1.08, 0.06),
-    new THREE.MeshStandardMaterial({ color: 0x161616, metalness: 0.15, roughness: 0.7 })
-  );
   frame.position.z = -0.03;
 
   group.add(frame);
@@ -128,15 +154,16 @@ function addPhoto(url, position, rotationY = 0) {
 }
 
 const basePath = `images/${galleryId}/`;
+const wallInset = 0.14;
 const photos = [
-  { file: '1.jpg', pos: { x: -1.5, y: 1.5, z: -roomDepth / 2 + 0.06 }, rot: 0 },
-  { file: '2.jpg', pos: { x: 1.5, y: 1.5, z: -roomDepth / 2 + 0.06 }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - 0.06, y: 1.5, z: -1 }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - 0.06, y: 1.5, z: 1 }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: 1.5, y: 1.5, z: roomDepth / 2 - 0.06 }, rot: Math.PI },
-  { file: '6.jpg', pos: { x: -1.5, y: 1.5, z: roomDepth / 2 - 0.06 }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + 0.06, y: 1.5, z: 1 }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + 0.06, y: 1.5, z: -1 }, rot: Math.PI / 2 }
+  { file: '1.jpg', pos: { x: -1.5, y: 1.5, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '2.jpg', pos: { x: 1.5, y: 1.5, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.5, z: -1 }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.5, z: 1 }, rot: -Math.PI / 2 },
+  { file: '5.jpg', pos: { x: 1.5, y: 1.5, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '6.jpg', pos: { x: -1.5, y: 1.5, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.5, z: 1 }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.5, z: -1 }, rot: Math.PI / 2 }
 ];
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
