@@ -175,6 +175,7 @@ function createPlasterWallMaps() {
   roughCtx.fillStyle = roughGradient;
   roughCtx.fillRect(0, 0, 1024, 1024);
 
+  const dirtStartY = 560;
   for (let i = 0; i < 7000; i += 1) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
@@ -185,9 +186,11 @@ function createPlasterWallMaps() {
     bumpCtx.arc(x, y, radius, 0, Math.PI * 2);
     bumpCtx.fill();
 
-    const wallDust = Math.random() > 0.5 ? 'rgba(74, 72, 66, 0.005)' : 'rgba(243, 243, 238, 0.005)';
-    colorCtx.fillStyle = wallDust;
-    colorCtx.fillRect(x, y, 1.6, 1.6);
+    if (y >= dirtStartY) {
+      const wallDust = Math.random() > 0.5 ? 'rgba(74, 72, 66, 0.005)' : 'rgba(243, 243, 238, 0.005)';
+      colorCtx.fillStyle = wallDust;
+      colorCtx.fillRect(x, y, 1.6, 1.6);
+    }
   }
 
   for (let i = 0; i < 750; i += 1) {
@@ -278,13 +281,13 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  colorCtx.fillStyle = '#b3aca1';
+  colorCtx.fillStyle = '#8f7356';
   colorCtx.fillRect(0, 0, 512, 512);
 
-  roughCtx.fillStyle = 'rgb(126, 126, 126)';
+  roughCtx.fillStyle = 'rgb(118, 118, 118)';
   roughCtx.fillRect(0, 0, 512, 512);
 
-  bumpCtx.fillStyle = 'rgb(132, 132, 132)';
+  bumpCtx.fillStyle = 'rgb(138, 138, 138)';
   bumpCtx.fillRect(0, 0, 512, 512);
 
   const map = new THREE.CanvasTexture(colorCanvas);
@@ -460,105 +463,11 @@ function addVentGrille() {
     grille.add(slat);
   }
 
-  grille.position.set(roomWidth / 2 - 0.46, roomHeight - 0.53, -roomDepth / 2 + 0.08);
+  grille.position.set(roomWidth / 2 - 0.46, roomHeight - 0.32, -roomDepth / 2 + 0.08);
   scene.add(grille);
 }
 
 addVentGrille();
-
-
-function addPremiumPlant() {
-  const plant = new THREE.Group();
-
-  const stemCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.03, 0.34, 0.02),
-    new THREE.Vector3(-0.02, 0.72, 0.01),
-    new THREE.Vector3(0.01, 1.03, 0)
-  ]);
-  const stem = new THREE.Mesh(
-    new THREE.TubeGeometry(stemCurve, 48, 0.018, 14, false),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x4f7b54,
-      roughness: 0.45,
-      transmission: 0.6,
-      thickness: 0.2
-    })
-  );
-  stem.castShadow = true;
-  stem.receiveShadow = true;
-  plant.add(stem);
-
-  const petalCount = 24;
-  const petalGeometry = new THREE.PlaneGeometry(0.24, 0.1, 1, 1);
-  const petalMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x7dac84,
-    side: THREE.DoubleSide,
-    roughness: 0.32,
-    transmission: 0.6,
-    thickness: 0.2
-  });
-  const petals = new THREE.InstancedMesh(petalGeometry, petalMaterial, petalCount);
-  const dummy = new THREE.Object3D();
-
-  for (let i = 0; i < petalCount; i += 1) {
-    const level = i / petalCount;
-    const angle = level * Math.PI * 4 + Math.random() * 0.6;
-    const radius = 0.06 + level * 0.12;
-    dummy.position.set(Math.cos(angle) * radius, 0.42 + level * 0.53, Math.sin(angle) * radius);
-    const randomAxis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
-    const randomQuat = new THREE.Quaternion().setFromAxisAngle(randomAxis, (Math.random() - 0.5) * 0.9);
-    const faceCenterQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.24 + Math.random() * 0.45, angle + Math.PI / 2, 0));
-    dummy.quaternion.copy(faceCenterQuat).multiply(randomQuat);
-    const scale = 0.8 + Math.random() * 0.45;
-    dummy.scale.set(scale, 0.7 + Math.random() * 0.4, 1);
-    dummy.updateMatrix();
-    petals.setMatrixAt(i, dummy.matrix);
-  }
-  petals.castShadow = true;
-  petals.receiveShadow = true;
-  petals.instanceMatrix.needsUpdate = true;
-  plant.add(petals);
-
-  const pot = new THREE.Group();
-  const outerPot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.2, 0.36, 42, 1, true),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x3a3f45,
-      roughness: 0.24,
-      metalness: 0.3,
-      clearcoat: 0.82,
-      clearcoatRoughness: 0.18
-    })
-  );
-  outerPot.castShadow = true;
-  outerPot.receiveShadow = true;
-
-  const potRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.225, 0.02, 16, 60),
-    new THREE.MeshStandardMaterial({ color: 0x767e86, roughness: 0.35, metalness: 0.42 })
-  );
-  potRim.rotation.x = Math.PI / 2;
-  potRim.position.y = 0.18;
-  potRim.castShadow = true;
-
-  const soil = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.2, 0.06, 30),
-    new THREE.MeshStandardMaterial({ color: 0x35281f, roughness: 0.92, metalness: 0 })
-  );
-  soil.position.y = 0.14;
-  soil.receiveShadow = true;
-
-  pot.add(outerPot);
-  pot.add(potRim);
-  pot.add(soil);
-  plant.add(pot);
-
-  plant.position.set(-roomWidth / 2 + 0.72, 0.02, -roomDepth / 2 + 0.84);
-  scene.add(plant);
-}
-
-addPremiumPlant();
 
 function addAirDust() {
   const dustTextureCanvas = document.createElement('canvas');
@@ -580,13 +489,22 @@ function addAirDust() {
   const dustCount = 220;
   const positions = new Float32Array(dustCount * 3);
   const offsets = new Float32Array(dustCount);
-  const baseY = new Float32Array(dustCount);
+  const velocities = new Float32Array(dustCount * 3);
+  const halfWidth = roomWidth / 2 - 0.35;
+  const halfDepth = roomDepth / 2 - 0.35;
+  const minY = 0.35;
+  const maxY = roomHeight - 0.35;
 
   for (let i = 0; i < dustCount; i += 1) {
-    positions[i * 3] = (Math.random() - 0.5) * (roomWidth - 0.6);
-    positions[i * 3 + 1] = 0.3 + Math.random() * (roomHeight - 0.55);
-    baseY[i] = positions[i * 3 + 1];
-    positions[i * 3 + 2] = (Math.random() - 0.5) * (roomDepth - 0.6);
+    positions[i * 3] = (Math.random() - 0.5) * (halfWidth * 2);
+    positions[i * 3 + 1] = minY + Math.random() * (maxY - minY);
+    positions[i * 3 + 2] = (Math.random() - 0.5) * (halfDepth * 2);
+
+    const dir = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) * 0.3, Math.random() - 0.5).normalize();
+    const speed = 0.0035 + Math.random() * 0.0045;
+    velocities[i * 3] = dir.x * speed;
+    velocities[i * 3 + 1] = dir.y * speed;
+    velocities[i * 3 + 2] = dir.z * speed;
     offsets[i] = Math.random() * Math.PI * 2;
   }
 
@@ -604,7 +522,7 @@ function addAirDust() {
 
   const dust = new THREE.Points(dustGeometry, dustMaterial);
   scene.add(dust);
-  return { dust, offsets, baseY };
+  return { dust, offsets, velocities, halfWidth, halfDepth, minY, maxY };
 }
 
 const dustParticles = addAirDust();
@@ -646,7 +564,7 @@ function addPhoto(url, position, rotationY = 0) {
     roughnessMap: goldFrameMaps.roughnessMap,
     roughness: 0.29,
     metalness: 0.58,
-    color: 0xaaa297
+    color: 0x8a7358
   });
 
   function fitByAspect(texture) {
@@ -839,7 +757,25 @@ function animate() {
   if (dustParticles) {
     const positions = dustParticles.dust.geometry.attributes.position.array;
     for (let i = 0; i < dustParticles.offsets.length; i += 1) {
-      positions[i * 3 + 1] = dustParticles.baseY[i] + Math.sin(t + dustParticles.offsets[i]) * 0.0002;
+      const idx = i * 3;
+      positions[idx] += dustParticles.velocities[idx];
+      positions[idx + 1] += dustParticles.velocities[idx + 1] + Math.sin(t * 0.9 + dustParticles.offsets[i]) * 0.00003;
+      positions[idx + 2] += dustParticles.velocities[idx + 2];
+
+      if (Math.abs(positions[idx]) > dustParticles.halfWidth) {
+        positions[idx] = clamp(positions[idx], -dustParticles.halfWidth, dustParticles.halfWidth);
+        dustParticles.velocities[idx] *= -1;
+      }
+
+      if (Math.abs(positions[idx + 2]) > dustParticles.halfDepth) {
+        positions[idx + 2] = clamp(positions[idx + 2], -dustParticles.halfDepth, dustParticles.halfDepth);
+        dustParticles.velocities[idx + 2] *= -1;
+      }
+
+      if (positions[idx + 1] > dustParticles.maxY || positions[idx + 1] < dustParticles.minY) {
+        positions[idx + 1] = clamp(positions[idx + 1], dustParticles.minY, dustParticles.maxY);
+        dustParticles.velocities[idx + 1] *= -1;
+      }
     }
     dustParticles.dust.geometry.attributes.position.needsUpdate = true;
   }
