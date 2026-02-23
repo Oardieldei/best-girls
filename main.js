@@ -260,7 +260,7 @@ function createGoldFrameMaterialMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughCanvas.getContext('2d');
 
-  colorCtx.fillStyle = '#8f7356';
+  colorCtx.fillStyle = '#a28667';
   colorCtx.fillRect(0, 0, 512, 512);
 
   roughCtx.fillStyle = 'rgb(118, 118, 118)';
@@ -392,7 +392,7 @@ function addChandelier(x, z) {
 
   const shade = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.56),
-    new THREE.MeshStandardMaterial({ color: 0xf4e7cc, roughness: 0.32, metalness: 0 })
+    new THREE.MeshStandardMaterial({ color: 0xf8efd9, roughness: 0.32, metalness: 0 })
   );
   shade.position.y = fixtureY - 0.13;
 
@@ -465,7 +465,7 @@ function addAirDust() {
   const dustTexture = new THREE.CanvasTexture(dustTextureCanvas);
   dustTexture.colorSpace = THREE.SRGBColorSpace;
 
-  const dustCount = 88;
+  const dustCount = 79;
   const positions = new Float32Array(dustCount * 3);
   const offsets = new Float32Array(dustCount);
   const velocities = new Float32Array(dustCount * 3);
@@ -480,7 +480,7 @@ function addAirDust() {
     positions[i * 3 + 2] = (Math.random() - 0.5) * (halfDepth * 2);
 
     const dir = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) * 0.3, Math.random() - 0.5).normalize();
-    const speed = (0.0035 + Math.random() * 0.0045) / 1.5;
+    const speed = ((0.0035 + Math.random() * 0.0045) / 1.5) * 0.7;
     velocities[i * 3] = dir.x * speed;
     velocities[i * 3 + 1] = dir.y * speed;
     velocities[i * 3 + 2] = dir.z * speed;
@@ -623,7 +623,7 @@ function addPhoto(url, position, rotationY = 0) {
 
   const maxSide = 1.5;
   const framePadding = 0.1;
-  const frameDepth = 0.12;
+  const frameDepth = 0.084;
   const frameWidth = 0.045;
   const frameCornerRadius = 0.05;
 
@@ -635,7 +635,7 @@ function addPhoto(url, position, rotationY = 0) {
     roughnessMap: goldFrameMaps.roughnessMap,
     roughness: 0.26,
     metalness: 0.58,
-    color: 0xc3a57f,
+    color: 0xd2b693,
     emissive: 0x3a2b1d,
     emissiveIntensity: 0.2
   });
@@ -717,6 +717,9 @@ function addPhoto(url, position, rotationY = 0) {
 
     wallShadow.geometry.dispose();
     wallShadow.geometry = new THREE.PlaneGeometry(outerWidth + 0.03, outerHeight + 0.03);
+
+    backLight.width = outerWidth * 0.92;
+    backLight.height = outerHeight * 0.92;
   }
 
   textureLoader.load(
