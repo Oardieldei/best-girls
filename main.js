@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
+import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/RGBELoader.js';
 
 function getGalleryId() {
   const params = new URLSearchParams(window.location.search);
@@ -31,6 +32,19 @@ renderer.physicallyCorrectLights = true;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+
+new RGBELoader().load(
+  'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/textures/equirectangular/studio_small_09_2k.hdr',
+  (texture) => {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envMap = pmrem.fromEquirectangular(texture).texture;
+
+    scene.environment = envMap;
+
+    texture.dispose();
+    pmrem.dispose();
+  }
+);
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.52);
 scene.add(ambientLight);
