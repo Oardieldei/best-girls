@@ -51,16 +51,13 @@ new RGBELoader().load(
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.52);
 scene.add(ambientLight);
 
-const keyLight = new THREE.SpotLight(0xfff8ee, 165, 28, Math.PI / 4, 0.6, 1.5);
+const keyLight = new THREE.SpotLight(0xfff8ee, 165, 28, Math.PI / 4, 0.38, 1.5);
 keyLight.position.set(0, roomHeight - 0.1, 0.4);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(2048, 2048);
 keyLight.shadow.bias = -0.00008;
 keyLight.shadow.normalBias = 0.015;
 scene.add(keyLight);
-const keyLightTarget = new THREE.Object3D();
-scene.add(keyLightTarget);
-keyLight.target = keyLightTarget;
 
 const fillLight = new THREE.DirectionalLight(0xf0f4ff, 0.3);
 fillLight.position.set(-2, roomHeight * 0.75, 2);
@@ -379,87 +376,6 @@ function createGoldFrameMaterialMaps() {
   return { map, bumpMap, roughnessMap };
 }
 
-function createDoorMaterialMaps() {
-  const size = 1024;
-  const colorCanvas = document.createElement('canvas');
-  const normalHeightCanvas = document.createElement('canvas');
-  const roughCanvas = document.createElement('canvas');
-  const aoCanvas = document.createElement('canvas');
-  [colorCanvas, normalHeightCanvas, roughCanvas, aoCanvas].forEach((c) => {
-    c.width = size;
-    c.height = size;
-  });
-
-  const colorCtx = colorCanvas.getContext('2d');
-  const normalCtx = normalHeightCanvas.getContext('2d');
-  const roughCtx = roughCanvas.getContext('2d');
-  const aoCtx = aoCanvas.getContext('2d');
-
-  const baseGradient = colorCtx.createLinearGradient(0, 0, size, 0);
-  baseGradient.addColorStop(0, '#8d633a');
-  baseGradient.addColorStop(0.5, '#b07d4c');
-  baseGradient.addColorStop(1, '#8a5e37');
-  colorCtx.fillStyle = baseGradient;
-  colorCtx.fillRect(0, 0, size, size);
-
-  normalCtx.fillStyle = 'rgb(128, 128, 128)';
-  normalCtx.fillRect(0, 0, size, size);
-
-  roughCtx.fillStyle = 'rgb(158, 158, 158)';
-  roughCtx.fillRect(0, 0, size, size);
-
-  aoCtx.fillStyle = 'rgb(228, 228, 228)';
-  aoCtx.fillRect(0, 0, size, size);
-
-  for (let y = 0; y < size; y += 6) {
-    const alpha = 0.05 + Math.random() * 0.05;
-    colorCtx.fillStyle = `rgba(71, 42, 20, ${alpha})`;
-    colorCtx.fillRect(0, y + Math.random() * 2, size, 1.2 + Math.random() * 0.8);
-  }
-
-  const edgeWidth = size * 0.12;
-  roughCtx.fillStyle = 'rgb(132, 132, 132)';
-  roughCtx.fillRect(0, 0, edgeWidth, size);
-  roughCtx.fillRect(size - edgeWidth, 0, edgeWidth, size);
-  roughCtx.fillRect(0, 0, size, edgeWidth * 0.8);
-  roughCtx.fillRect(0, size - edgeWidth * 0.8, size, edgeWidth * 0.8);
-
-  const centerWidth = size * 0.56;
-  roughCtx.fillStyle = 'rgb(174, 174, 174)';
-  roughCtx.fillRect((size - centerWidth) / 2, size * 0.11, centerWidth, size * 0.78);
-
-  const handleWear = roughCtx.createRadialGradient(size * 0.76, size * 0.52, 16, size * 0.76, size * 0.52, 82);
-  handleWear.addColorStop(0, 'rgba(120,120,120,0.95)');
-  handleWear.addColorStop(1, 'rgba(164,164,164,0)');
-  roughCtx.fillStyle = handleWear;
-  roughCtx.fillRect(size * 0.62, size * 0.34, size * 0.3, size * 0.34);
-
-  for (let i = 0; i < 4500; i += 1) {
-    const x = Math.random() * size;
-    const y = Math.random() * size;
-    const shade = 118 + Math.random() * 20;
-    normalCtx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-    normalCtx.fillRect(x, y, 1.2, 1.2);
-
-    const aoShade = 205 + Math.random() * 25;
-    aoCtx.fillStyle = `rgba(${aoShade}, ${aoShade}, ${aoShade}, ${0.08 + Math.random() * 0.08})`;
-    aoCtx.fillRect(x, y, 1.5, 1.5);
-  }
-
-  const map = new THREE.CanvasTexture(colorCanvas);
-  map.colorSpace = THREE.SRGBColorSpace;
-  const normalMap = createNormalMapFromHeightCanvas(normalHeightCanvas, 3.2);
-  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
-  const aoMap = new THREE.CanvasTexture(aoCanvas);
-
-  [map, normalMap, roughnessMap, aoMap].forEach((texture) => {
-    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.anisotropy = maxAnisotropy;
-  });
-
-  return { map, normalMap, roughnessMap, aoMap };
-}
-
 const floor = new THREE.Mesh(
   new THREE.PlaneGeometry(roomWidth, roomDepth),
   new THREE.MeshStandardMaterial({
@@ -512,117 +428,10 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
   return wall;
 }
 
-const wallThickness = 0.25;
-createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth / 2);
-createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
-createWall(roomDepth, roomHeight, wallThickness, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
-createWall(roomDepth, roomHeight, wallThickness, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
-
-function addDoorOnLongWall() {
-  const doorGroup = new THREE.Group();
-  const doorWidth = 1.0;
-  const doorHeight = 2.25;
-  const leafThickness = 0.045;
-  const jambThickness = 0.1;
-  const architraveThickness = 0.02;
-  const architraveDepth = 0.03;
-
-  const doorMaps = createDoorMaterialMaps();
-  const doorMaterial = new THREE.MeshPhysicalMaterial({
-    map: doorMaps.map,
-    normalMap: doorMaps.normalMap,
-    roughnessMap: doorMaps.roughnessMap,
-    aoMap: doorMaps.aoMap,
-    roughness: 0.55,
-    clearcoat: 0.4,
-    clearcoatRoughness: 0.2,
-    metalness: 0.05
-  });
-
-  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0xeee7dc, roughness: 0.45, metalness: 0.04 });
-  const handleMaterial = new THREE.MeshPhysicalMaterial({ color: 0xbec3cc, roughness: 0.2, metalness: 1, clearcoat: 0.5 });
-
-  const jambTop = new THREE.Mesh(new THREE.BoxGeometry(doorWidth + jambThickness * 2, jambThickness, jambThickness), frameMaterial);
-  jambTop.position.set(0, doorHeight + jambThickness / 2, 0);
-  const jambLeft = new THREE.Mesh(new THREE.BoxGeometry(jambThickness, doorHeight, jambThickness), frameMaterial);
-  jambLeft.position.set(-(doorWidth + jambThickness) / 2, doorHeight / 2, 0);
-  const jambRight = jambLeft.clone();
-  jambRight.position.x *= -1;
-  doorGroup.add(jambTop, jambLeft, jambRight);
-
-  const architraveWidth = doorWidth + 0.24;
-  const architraveHeight = doorHeight + 0.24;
-  const trimTop = new THREE.Mesh(new THREE.BoxGeometry(architraveWidth, 0.12, architraveDepth), frameMaterial);
-  trimTop.position.set(0, architraveHeight - 0.06, architraveThickness + architraveDepth * 0.5);
-  const trimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.12, architraveHeight, architraveDepth), frameMaterial);
-  trimLeft.position.set(-architraveWidth / 2 + 0.06, architraveHeight / 2 - 0.06, architraveThickness + architraveDepth * 0.5);
-  const trimRight = trimLeft.clone();
-  trimRight.position.x *= -1;
-  doorGroup.add(trimTop, trimLeft, trimRight);
-
-  const leafShape = new THREE.Shape();
-  leafShape.moveTo(-doorWidth / 2, 0);
-  leafShape.lineTo(doorWidth / 2, 0);
-  leafShape.lineTo(doorWidth / 2, doorHeight);
-  leafShape.lineTo(-doorWidth / 2, doorHeight);
-  leafShape.closePath();
-
-  const leafGeometry = new THREE.ExtrudeGeometry(leafShape, {
-    depth: leafThickness,
-    bevelEnabled: true,
-    bevelSize: 0.002,
-    bevelThickness: 0.002,
-    bevelSegments: 2,
-    steps: 1,
-    curveSegments: 4
-  });
-  leafGeometry.center();
-  const uv = leafGeometry.attributes.uv;
-  leafGeometry.setAttribute('uv2', new THREE.Float32BufferAttribute(uv.array, 2));
-
-  const doorLeaf = new THREE.Mesh(leafGeometry, doorMaterial);
-  doorLeaf.position.set(0, doorHeight / 2, jambThickness * 0.12);
-  doorLeaf.castShadow = true;
-  doorLeaf.receiveShadow = true;
-  doorGroup.add(doorLeaf);
-
-  const panelMaterial = new THREE.MeshStandardMaterial({ color: 0x9f6f41, roughness: 0.58, metalness: 0.02 });
-  const panelWidth = doorWidth * 0.35;
-  const panelHeight = doorHeight * 0.32;
-  [-0.22, 0.22].forEach((x) => {
-    [doorHeight * 0.3, doorHeight * 0.68].forEach((y) => {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(panelWidth, panelHeight, 0.012), panelMaterial);
-      panel.position.set(x, y, leafThickness * 0.58);
-      doorGroup.add(panel);
-    });
-  });
-
-  const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.14, 20), handleMaterial);
-  handle.rotation.z = Math.PI / 2;
-  handle.position.set(doorWidth * 0.33, doorHeight * 0.5, leafThickness * 0.72);
-  const handleBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.01, 18), handleMaterial);
-  handleBase.position.set(doorWidth * 0.265, doorHeight * 0.5, leafThickness * 0.72);
-  handleBase.rotation.y = Math.PI / 2;
-  doorGroup.add(handle, handleBase);
-
-  const gapShadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(doorWidth * 0.92, 0.08),
-    new THREE.ShadowMaterial({ opacity: 0.35 })
-  );
-  gapShadow.rotation.x = -Math.PI / 2;
-  gapShadow.position.set(0, 0.001, leafThickness * 0.38);
-  gapShadow.receiveShadow = true;
-  doorGroup.add(gapShadow);
-
-  doorGroup.position.set(roomWidth / 2 - wallThickness / 2 - 0.02, 0.004, -roomDepth / 2 + 1.25);
-  doorGroup.rotation.y = -Math.PI / 2;
-  scene.add(doorGroup);
-
-  keyLight.position.set(roomWidth * 0.2, roomHeight - 0.16, -roomDepth * 0.14);
-  keyLightTarget.position.set(roomWidth / 2 - wallThickness / 2 - 0.045, doorHeight * 0.88, -roomDepth / 2 + 1.24);
-}
-
-addDoorOnLongWall();
+createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, -roomDepth / 2);
+createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, roomDepth / 2);
+createWall(roomDepth, roomHeight, 0.1, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+createWall(roomDepth, roomHeight, 0.1, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
 
 const cornerChamferMaterial = wallMaterial.clone();
 const chamferSize = 0.07;
@@ -650,20 +459,20 @@ function addTrim(geometry, material, x, y, z) {
   scene.add(trim);
 }
 
-addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, -roomDepth / 2 + wallThickness / 2 + baseboardDepth / 2);
-addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, roomDepth / 2 - wallThickness / 2 - baseboardDepth / 2);
-addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, -roomWidth / 2 + wallThickness / 2 + baseboardDepth / 2, baseboardY, 0);
-addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, roomWidth / 2 - wallThickness / 2 - baseboardDepth / 2, baseboardY, 0);
+addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, -roomDepth / 2 + 0.06);
+addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, roomDepth / 2 - 0.06);
+addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, -roomWidth / 2 + 0.06, baseboardY, 0);
+addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, roomWidth / 2 - 0.06, baseboardY, 0);
 
 const corniceHeight = 0.12;
 const corniceDepth = 0.1;
 const corniceY = roomHeight - corniceHeight / 2;
 const corniceMaterial = new THREE.MeshStandardMaterial({ color: 0xd2c2ac, roughness: 0.5 });
 
-addTrim(new THREE.BoxGeometry(roomWidth, corniceHeight, corniceDepth), corniceMaterial, 0, corniceY, -roomDepth / 2 + wallThickness / 2 + corniceDepth / 2);
-addTrim(new THREE.BoxGeometry(roomWidth, corniceHeight, corniceDepth), corniceMaterial, 0, corniceY, roomDepth / 2 - wallThickness / 2 - corniceDepth / 2);
-addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, -roomWidth / 2 + wallThickness / 2 + corniceDepth / 2, corniceY, 0);
-addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, roomWidth / 2 - wallThickness / 2 - corniceDepth / 2, corniceY, 0);
+addTrim(new THREE.BoxGeometry(roomWidth, corniceHeight, corniceDepth), corniceMaterial, 0, corniceY, -roomDepth / 2 + 0.08);
+addTrim(new THREE.BoxGeometry(roomWidth, corniceHeight, corniceDepth), corniceMaterial, 0, corniceY, roomDepth / 2 - 0.08);
+addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, -roomWidth / 2 + 0.08, corniceY, 0);
+addTrim(new THREE.BoxGeometry(corniceDepth, corniceHeight, roomDepth), corniceMaterial, roomWidth / 2 - 0.08, corniceY, 0);
 
 function addChandelier(x, z) {
   const chandelier = new THREE.Group();
@@ -735,7 +544,7 @@ function addVentGrille() {
     grille.add(slat);
   }
 
-  grille.position.set(roomWidth / 2 - wallThickness / 2 - 0.34, roomHeight - 0.32, -roomDepth / 2 + wallThickness / 2 + 0.02);
+  grille.position.set(roomWidth / 2 - 0.46, roomHeight - 0.32, -roomDepth / 2 + 0.08);
   scene.add(grille);
 }
 
@@ -969,7 +778,7 @@ function addPhoto(url, position, rotationY = 0) {
 }
 
 const basePath = `images/${galleryId}/`;
-const wallInset = wallThickness / 2 - 0.02;
+const wallInset = 0.08;
 const photoSpacingScale = 0.8;
 const shortWallPhotoOffset = (roomWidth / 4) * photoSpacingScale;
 const longWallPhotoOffset = 1.35 * photoSpacingScale;
