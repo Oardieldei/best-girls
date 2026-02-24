@@ -779,16 +779,18 @@ function addPhoto(url, position, rotationY = 0) {
 
 const basePath = `images/${galleryId}/`;
 const wallInset = 0.08;
-const shortWallPhotoOffset = roomWidth / 4;
+const photoSpacingScale = 0.8;
+const shortWallPhotoOffset = (roomWidth / 4) * photoSpacingScale;
+const longWallPhotoOffset = 1.35 * photoSpacingScale;
 const photos = [
   { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
   { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: -1.35 }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: 1.35 }, rot: -Math.PI / 2 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: -longWallPhotoOffset }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: longWallPhotoOffset }, rot: -Math.PI / 2 },
   { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
   { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: 1.35 }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: -1.35 }, rot: Math.PI / 2 }
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: longWallPhotoOffset }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: -longWallPhotoOffset }, rot: Math.PI / 2 }
 ];
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
