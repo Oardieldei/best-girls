@@ -1,6 +1,9 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
 import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/RGBELoader.js';
+import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/RenderPass.js';
+import { SSAOPass } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/SSAOPass.js';
 
 function getGalleryId() {
   const params = new URLSearchParams(window.location.search);
@@ -34,6 +37,16 @@ renderer.physicallyCorrectLights = true;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+ssaoPass.kernelRadius = 14;
+ssaoPass.minDistance = 0.0015;
+ssaoPass.maxDistance = 0.12;
+ssaoPass.output = SSAOPass.OUTPUT.Default;
+composer.addPass(ssaoPass);
 
 new RGBELoader().load(
   'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/textures/equirectangular/studio_small_09_2k.hdr',
@@ -305,6 +318,78 @@ function createNormalMapFromHeightCanvas(heightCanvas, strength = 2) {
   return new THREE.CanvasTexture(normalCanvas);
 }
 
+function createDoorWoodMaps() {
+  const size = 1024;
+  const colorCanvas = document.createElement('canvas');
+  const heightCanvas = document.createElement('canvas');
+  const roughCanvas = document.createElement('canvas');
+  const aoCanvas = document.createElement('canvas');
+
+  [colorCanvas, heightCanvas, roughCanvas, aoCanvas].forEach((canvas) => {
+    canvas.width = size;
+    canvas.height = size;
+  });
+
+  const colorCtx = colorCanvas.getContext('2d');
+  const heightCtx = heightCanvas.getContext('2d');
+  const roughCtx = roughCanvas.getContext('2d');
+  const aoCtx = aoCanvas.getContext('2d');
+
+  const baseGrad = colorCtx.createLinearGradient(0, 0, size, 0);
+  baseGrad.addColorStop(0, '#6d492a');
+  baseGrad.addColorStop(0.5, '#7a5331');
+  baseGrad.addColorStop(1, '#624122');
+  colorCtx.fillStyle = baseGrad;
+  colorCtx.fillRect(0, 0, size, size);
+
+  heightCtx.fillStyle = 'rgb(127,127,127)';
+  heightCtx.fillRect(0, 0, size, size);
+  roughCtx.fillStyle = 'rgb(146,146,146)';
+  roughCtx.fillRect(0, 0, size, size);
+  aoCtx.fillStyle = 'rgb(226,226,226)';
+  aoCtx.fillRect(0, 0, size, size);
+
+  for (let y = 0; y < size; y += 5) {
+    const wave = Math.sin(y * 0.022) * 8;
+    colorCtx.fillStyle = `rgba(52, 31, 15, ${0.04 + Math.random() * 0.08})`;
+    colorCtx.fillRect(0, y + wave, size, 1.2 + Math.random() * 1.5);
+
+    const tone = 122 + Math.random() * 18;
+    heightCtx.fillStyle = `rgb(${tone},${tone},${tone})`;
+    heightCtx.fillRect(0, y + wave, size, 0.9 + Math.random() * 1.2);
+
+    const roughTone = 135 + Math.random() * 45;
+    roughCtx.fillStyle = `rgb(${roughTone},${roughTone},${roughTone})`;
+    roughCtx.fillRect(0, y, size, 1.3);
+  }
+
+  for (let i = 0; i < 1800; i += 1) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    colorCtx.fillStyle = `rgba(102, 72, 40, ${0.05 + Math.random() * 0.08})`;
+    colorCtx.fillRect(x, y, 4 + Math.random() * 16, 0.8 + Math.random() * 1.8);
+
+    const aoTone = 174 + Math.random() * 34;
+    aoCtx.fillStyle = `rgba(${aoTone}, ${aoTone}, ${aoTone}, ${0.05 + Math.random() * 0.08})`;
+    aoCtx.fillRect(x, y, 3 + Math.random() * 9, 3 + Math.random() * 7);
+  }
+
+  const map = new THREE.CanvasTexture(colorCanvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const normalMap = createNormalMapFromHeightCanvas(heightCanvas, 3.2);
+  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
+  const aoMap = new THREE.CanvasTexture(aoCanvas);
+  const displacementMap = new THREE.CanvasTexture(heightCanvas);
+
+  [map, normalMap, roughnessMap, aoMap, displacementMap].forEach((texture) => {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1, 2.2);
+    texture.anisotropy = maxAnisotropy;
+  });
+
+  return { map, normalMap, roughnessMap, aoMap, displacementMap };
+}
+
 function createCeilingPanelTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
@@ -428,10 +513,178 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
   return wall;
 }
 
-createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, -roomDepth / 2);
-createWall(roomWidth, roomHeight, 0.1, 0, roomHeight / 2, roomDepth / 2);
-createWall(roomDepth, roomHeight, 0.1, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
-createWall(roomDepth, roomHeight, 0.1, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+function createWallWithOpening(width, height, depth, opening) {
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, -halfH);
+  shape.lineTo(halfW, -halfH);
+  shape.lineTo(halfW, halfH);
+  shape.lineTo(-halfW, halfH);
+  shape.lineTo(-halfW, -halfH);
+
+  const hole = new THREE.Path();
+  hole.moveTo(opening.x - opening.width / 2, -halfH);
+  hole.lineTo(opening.x + opening.width / 2, -halfH);
+  hole.lineTo(opening.x + opening.width / 2, -halfH + opening.height);
+  hole.lineTo(opening.x - opening.width / 2, -halfH + opening.height);
+  hole.lineTo(opening.x - opening.width / 2, -halfH);
+  shape.holes.push(hole);
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: false,
+    curveSegments: 12
+  });
+  geometry.translate(0, 0, -depth / 2);
+  geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(geometry.attributes.uv.array, 2));
+  return geometry;
+}
+
+function createBeveledTrimGeometry(width, height, thickness, bevelSize, bevelThickness) {
+  const shape = new THREE.Shape();
+  const hw = width / 2;
+  const hh = height / 2;
+  shape.moveTo(-hw, -hh);
+  shape.lineTo(hw, -hh);
+  shape.lineTo(hw, hh);
+  shape.lineTo(-hw, hh);
+  shape.lineTo(-hw, -hh);
+
+  return new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: true,
+    bevelSize,
+    bevelThickness,
+    bevelSegments: 3,
+    curveSegments: 8
+  });
+}
+
+function addDoorAssembly() {
+  const wallDepth = 0.1;
+  const frameDepth = 0.11;
+  const doorWidth = 1.02;
+  const doorHeight = 2.18;
+  const doorThickness = 0.045;
+  const doorGap = 0.003;
+  const frameReveal = 0.013;
+  const trimWidth = 0.1;
+  const trimThickness = 0.022;
+  const openingWidth = doorWidth + frameReveal * 2 + doorGap * 2;
+  const openingHeight = doorHeight + frameReveal + doorGap;
+  const doorX = roomWidth / 2 - (openingWidth / 2 + 0.44);
+
+  const backWallWithOpening = new THREE.Mesh(
+    createWallWithOpening(roomWidth, roomHeight, wallDepth, {
+      width: openingWidth + trimWidth * 0.75,
+      height: openingHeight + 0.02,
+      x: doorX
+    }),
+    wallMaterial
+  );
+  backWallWithOpening.position.set(0, roomHeight / 2, -roomDepth / 2 + wallDepth / 2);
+  backWallWithOpening.receiveShadow = true;
+  scene.add(backWallWithOpening);
+
+  createWall(roomWidth, roomHeight, wallDepth, 0, roomHeight / 2, roomDepth / 2);
+  createWall(roomDepth, roomHeight, wallDepth, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+  createWall(roomDepth, roomHeight, wallDepth, roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+
+  const frameMaterial = new THREE.MeshStandardMaterial({
+    color: 0x7b5738,
+    roughness: 0.62,
+    metalness: 0.04
+  });
+
+  const doorMaps = createDoorWoodMaps();
+  const doorMaterial = new THREE.MeshPhysicalMaterial({
+    map: doorMaps.map,
+    normalMap: doorMaps.normalMap,
+    roughnessMap: doorMaps.roughnessMap,
+    aoMap: doorMaps.aoMap,
+    displacementMap: doorMaps.displacementMap,
+    displacementScale: 0.003,
+    metalness: 0,
+    roughness: 0.55,
+    clearcoat: 0.42,
+    clearcoatRoughness: 0.16,
+    envMapIntensity: 1.4
+  });
+
+  const doorGroup = new THREE.Group();
+  const bottomY = doorHeight / 2;
+  const doorZ = -roomDepth / 2 + 0.03;
+  doorGroup.position.set(doorX, bottomY, doorZ);
+
+  const frameThickness = 0.06;
+  const sideFrame = new THREE.BoxGeometry(frameThickness, openingHeight, frameDepth);
+  const headerFrame = new THREE.BoxGeometry(openingWidth + frameThickness * 2, frameThickness, frameDepth);
+  const leftFrame = new THREE.Mesh(sideFrame, frameMaterial);
+  const rightFrame = new THREE.Mesh(sideFrame, frameMaterial);
+  const topFrame = new THREE.Mesh(headerFrame, frameMaterial);
+  leftFrame.position.set(-openingWidth / 2 - frameThickness / 2, (openingHeight - doorHeight) * 0.5, -0.01);
+  rightFrame.position.set(openingWidth / 2 + frameThickness / 2, (openingHeight - doorHeight) * 0.5, -0.01);
+  topFrame.position.set(0, openingHeight / 2 + frameThickness / 2 - doorHeight / 2, -0.01);
+
+  const doorGeometry = createBeveledTrimGeometry(doorWidth, doorHeight, doorThickness, 0.008, 0.008);
+  doorGeometry.center();
+  doorGeometry.setAttribute('uv2', new THREE.BufferAttribute(doorGeometry.attributes.uv.array, 2));
+  const door = new THREE.Mesh(doorGeometry, doorMaterial);
+  door.position.set(0, 0, 0.004);
+  door.castShadow = true;
+  door.receiveShadow = true;
+
+  const trimMaterial = new THREE.MeshStandardMaterial({ color: 0x6f4c30, roughness: 0.52, metalness: 0.08 });
+  const sideTrimGeom = createBeveledTrimGeometry(trimWidth, openingHeight + trimWidth * 0.8, trimThickness, 0.006, 0.005);
+  sideTrimGeom.center();
+  const topTrimGeom = createBeveledTrimGeometry(openingWidth + trimWidth * 2.4, trimWidth, trimThickness, 0.006, 0.005);
+  topTrimGeom.center();
+  const leftTrim = new THREE.Mesh(sideTrimGeom, trimMaterial);
+  const rightTrim = new THREE.Mesh(sideTrimGeom, trimMaterial);
+  const topTrim = new THREE.Mesh(topTrimGeom, trimMaterial);
+  leftTrim.position.set(-openingWidth / 2 - trimWidth / 2, 0.03, trimThickness / 2 + 0.03);
+  rightTrim.position.set(openingWidth / 2 + trimWidth / 2, 0.03, trimThickness / 2 + 0.03);
+  topTrim.position.set(0, openingHeight / 2 - doorHeight / 2 + trimWidth / 2, trimThickness / 2 + 0.03);
+
+  const handleMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xc6ced8,
+    metalness: 1,
+    roughness: 0.2,
+    envMapIntensity: 1.5
+  });
+  const handleBase = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 24), handleMaterial);
+  handleBase.rotation.x = Math.PI / 2;
+  handleBase.position.set(doorWidth * 0.32, 0, doorThickness / 2 + 0.007);
+  const handleLever = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.14, 18), handleMaterial);
+  handleLever.rotation.z = Math.PI / 2;
+  handleLever.position.set(doorWidth * 0.32 + 0.065, -0.012, doorThickness / 2 + 0.017);
+
+  const shadowTextureCanvas = document.createElement('canvas');
+  shadowTextureCanvas.width = 256;
+  shadowTextureCanvas.height = 256;
+  const shadowCtx = shadowTextureCanvas.getContext('2d');
+  const radial = shadowCtx.createRadialGradient(128, 128, 22, 128, 128, 120);
+  radial.addColorStop(0, 'rgba(0,0,0,0.68)');
+  radial.addColorStop(1, 'rgba(0,0,0,0)');
+  shadowCtx.fillStyle = radial;
+  shadowCtx.fillRect(0, 0, 256, 256);
+  const shadowMap = new THREE.CanvasTexture(shadowTextureCanvas);
+
+  const contactShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(doorWidth * 1.1, 0.46),
+    new THREE.MeshBasicMaterial({ map: shadowMap, color: 0x14110e, transparent: true, opacity: 0.15, depthWrite: false })
+  );
+  contactShadow.rotation.x = -Math.PI / 2;
+  contactShadow.position.set(doorX, 0.011, -roomDepth / 2 + 0.19);
+
+  doorGroup.add(leftFrame, rightFrame, topFrame, leftTrim, rightTrim, topTrim, door, handleBase, handleLever);
+  doorGroup.position.z -= 0.01;
+  scene.add(doorGroup);
+  scene.add(contactShadow);
+}
+
+addDoorAssembly();
 
 const cornerChamferMaterial = wallMaterial.clone();
 const chamferSize = 0.07;
@@ -836,6 +1089,8 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  composer.setSize(window.innerWidth, window.innerHeight);
+  ssaoPass.setSize(window.innerWidth, window.innerHeight);
 });
 
 function applyBounds() {
@@ -895,7 +1150,7 @@ function animate() {
     applyBounds();
   }
 
-  renderer.render(scene, camera);
+  composer.render();
 }
 
 animate();
