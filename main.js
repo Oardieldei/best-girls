@@ -779,7 +779,7 @@ function addPhoto(url, position, rotationY = 0) {
 
 const basePath = `images/${galleryId}/`;
 const wallInset = 0.08;
-const shortWallPhotoOffset = 1.35;
+const shortWallPhotoOffset = roomWidth / 4;
 const photos = [
   { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
   { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
