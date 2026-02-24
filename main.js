@@ -549,8 +549,8 @@ createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth /
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
 
 const windowOpeningWidth = 2.3;
-const windowOpeningHeight = 1.7;
-const windowCenterY = roomHeight * 0.53;
+const windowOpeningHeight = 3.2;
+const windowCenterY = roomHeight * 0.5;
 const windowBottomY = windowCenterY - windowOpeningHeight / 2;
 const windowTopY = windowCenterY + windowOpeningHeight / 2;
 const windowHalfSpanZ = windowOpeningWidth / 2;
@@ -576,7 +576,9 @@ frameLeft.position.set(-windowOpeningWidth / 2 - frameThickness / 2, 0, 0);
 const frameRight = frameLeft.clone();
 frameRight.position.x *= -1;
 
-const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameThickness * 0.9, windowOpeningHeight + frameThickness * 1.4, frameDepth * 0.95), windowFrameMaterial);
+const mullionThickness = frameThickness * 0.9;
+const mullion = new THREE.Mesh(new THREE.BoxGeometry(mullionThickness, windowOpeningHeight + frameThickness * 1.4, frameDepth * 0.95), windowFrameMaterial);
+const transom = new THREE.Mesh(new THREE.BoxGeometry(windowOpeningWidth + frameThickness * 1.4, mullionThickness, frameDepth * 0.95), windowFrameMaterial);
 
 const glassMaterial = new THREE.MeshPhysicalMaterial({
   color: 0xf2f9ff,
@@ -594,21 +596,21 @@ innerGlass.position.x = frameDepth * 0.17;
 const outerGlass = new THREE.Mesh(glassGeometry, glassMaterial.clone());
 outerGlass.position.x = -frameDepth * 0.17;
 
-windowGroup.add(frameTop, frameBottom, frameLeft, frameRight, mullion, innerGlass, outerGlass);
+windowGroup.add(frameTop, frameBottom, frameLeft, frameRight, mullion, transom, innerGlass, outerGlass);
 windowGroup.rotation.y = Math.PI / 2;
 windowGroup.position.set(-roomWidth / 2 + wallThickness / 2 + 0.005, windowCenterY, 0);
 scene.add(windowGroup);
 
 const skyPlane = new THREE.Mesh(
-  new THREE.PlaneGeometry(windowOpeningWidth * 2.2, windowOpeningHeight * 2.05),
+  new THREE.PlaneGeometry(windowOpeningWidth * 2.2, windowOpeningHeight * 1.55),
   new THREE.MeshBasicMaterial({ map: createWindowGradientTexture(), side: THREE.DoubleSide })
 );
 skyPlane.rotation.y = Math.PI / 2;
-skyPlane.position.set(-roomWidth / 2 - 1.2, windowCenterY + 0.15, 0);
+skyPlane.position.set(-roomWidth / 2 - 1.2, windowCenterY + 0.05, 0);
 scene.add(skyPlane);
 
 const bloomCard = new THREE.Mesh(
-  new THREE.PlaneGeometry(windowOpeningWidth * 1.55, windowOpeningHeight * 1.4),
+  new THREE.PlaneGeometry(windowOpeningWidth * 1.6, windowOpeningHeight * 1.2),
   new THREE.MeshBasicMaterial({ color: 0xe8f2ff, transparent: true, opacity: 0.16, side: THREE.DoubleSide })
 );
 bloomCard.rotation.y = Math.PI / 2;
@@ -616,11 +618,11 @@ bloomCard.position.set(-roomWidth / 2 + wallThickness / 2 + 0.03, windowCenterY,
 scene.add(bloomCard);
 
 const fakeWindowLight = new THREE.Mesh(
-  new THREE.PlaneGeometry(3.7, 2.9),
+  new THREE.PlaneGeometry(4.5, 3.6),
   new THREE.MeshBasicMaterial({ map: createFloorLightTexture(), transparent: true, opacity: 0.12, depthWrite: false })
 );
 fakeWindowLight.rotation.x = -Math.PI / 2;
-fakeWindowLight.position.set(-roomWidth / 2 + 1.6, 0.04, 0);
+fakeWindowLight.position.set(-roomWidth / 2 + 1.9, 0.04, 0);
 scene.add(fakeWindowLight);
 
 const sideDoorCenterZ = -roomDepth / 2 + 1.45;
