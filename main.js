@@ -17,7 +17,8 @@ const roomWidth = 6 * roomScale;
 const roomDepth = 8 * roomScale;
 const roomHeight = 4.5 * roomScale;
 const wallThickness = 0.25;
-const playerHeight = 1.6;
+const standingPlayerHeight = 1.6;
+const crouchingPlayerHeight = 1.05;
 const playerMargin = 0.35;
 const doorFrameDepth = 0.1;
 const doorJambThickness = 0.1;
@@ -32,7 +33,7 @@ scene.background = new THREE.Color(0xe9e6df);
 scene.fog = new THREE.FogExp2(0xddeeff, 0.01);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, playerHeight, 0);
+camera.position.set(0, standingPlayerHeight, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1127,17 +1128,21 @@ const basePath = `images/${galleryId}/`;
 const wallInset = 0.08;
 const photoSpacingScale = 0.8;
 const shortWallPhotoOffset = (roomWidth / 4) * photoSpacingScale;
-const longWallPhotoOffset = 1.35 * photoSpacingScale;
-const oppositeDoorWallPhotoOffset = roomDepth / 2 - 0.9;
+const doorWallCornerZ = roomDepth / 2;
+const doorWallSpacing = (doorWallCornerZ - sideDoorMaxZ) / 3;
+const firstDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing;
+const secondDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing * 2;
+const windowWallPositivePaintingZ = (roomDepth / 2 + windowHalfSpanZ) / 2;
+const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
 const photos = [
   { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
   { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: -longWallPhotoOffset }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: longWallPhotoOffset }, rot: -Math.PI / 2 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
   { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
   { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: oppositeDoorWallPhotoOffset }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: -oppositeDoorWallPhotoOffset }, rot: Math.PI / 2 }
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
 ];
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
@@ -1151,6 +1156,7 @@ function addMuseumBarriers() {
   const postTopRadius = 0.06;
   const postBaseY = postBaseHeight / 2;
   const uniformBarrierSpan = 2.05 * 0.88;
+  const postHeight = 1;
   const ropeAnchorYOffset = 0.08;
   const barrierConfigs = photos.map((photo) => {
     const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), photo.rot);
@@ -1219,9 +1225,7 @@ function addMuseumBarriers() {
       rightPost.set(config.center.x, 0, config.center.z + halfSpan);
     }
 
-    [leftPost, rightPost].forEach((postPos, localIndex) => {
-      const postHeight = 0.9 + ((barrierIndex * 2 + localIndex) % 5) * 0.05;
-
+    [leftPost, rightPost].forEach((postPos) => {
       temp.position.set(postPos.x, postBaseY, postPos.z);
       temp.rotation.set(0, 0, 0);
       temp.scale.set(1, 1, 1);
@@ -1290,6 +1294,7 @@ const apexGravity = 0.0048;
 const jumpVelocity = 0.158;
 let verticalVelocity = 0;
 let isJumping = false;
+let isCrouching = false;
 
 const keyMap = {
   KeyW: 'forward',
@@ -1306,11 +1311,19 @@ window.addEventListener('keydown', (event) => {
     verticalVelocity = jumpVelocity;
     isJumping = true;
   }
+
+  if (event.code === 'ControlLeft' || event.code === 'ControlRight') {
+    isCrouching = true;
+  }
 });
 
 window.addEventListener('keyup', (event) => {
   const dir = keyMap[event.code];
   if (dir) move[dir] = false;
+
+  if (event.code === 'ControlLeft' || event.code === 'ControlRight') {
+    isCrouching = false;
+  }
 });
 
 window.addEventListener('resize', () => {
@@ -1351,13 +1364,14 @@ function applyBounds(previousX, previousZ) {
     verticalVelocity -= nearApex ? apexGravity : gravity;
     camera.position.y += verticalVelocity;
 
-    if (camera.position.y <= playerHeight) {
-      camera.position.y = playerHeight;
+    const groundHeight = isCrouching ? crouchingPlayerHeight : standingPlayerHeight;
+    if (camera.position.y <= groundHeight) {
+      camera.position.y = groundHeight;
       verticalVelocity = 0;
       isJumping = false;
     }
   } else {
-    camera.position.y = playerHeight;
+    camera.position.y = isCrouching ? crouchingPlayerHeight : standingPlayerHeight;
   }
 }
 
