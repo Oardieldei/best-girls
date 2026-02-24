@@ -1,10 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
 import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/RGBELoader.js';
-import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { SSAOPass } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/postprocessing/SSAOPass.js';
 
 function getGalleryId() {
   const params = new URLSearchParams(window.location.search);
@@ -34,28 +30,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.physicallyCorrectLights = true;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.08;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
-
-const composer = new EffectComposer(renderer);
-composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-composer.setSize(window.innerWidth, window.innerHeight);
-
-const renderPass = new RenderPass(scene, camera);
-composer.addPass(renderPass);
-
-const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-ssaoPass.kernelRadius = 26;
-ssaoPass.minDistance = 0.003;
-ssaoPass.maxDistance = 0.15;
-ssaoPass.output = SSAOPass.OUTPUT.Default;
-composer.addPass(ssaoPass);
-
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.65, 0.82);
-composer.addPass(bloomPass);
 
 new RGBELoader().load(
   'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/textures/equirectangular/studio_small_09_2k.hdr',
@@ -775,10 +752,6 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  composer.setSize(window.innerWidth, window.innerHeight);
-  composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  ssaoPass.setSize(window.innerWidth, window.innerHeight);
-  bloomPass.setSize(window.innerWidth, window.innerHeight);
 });
 
 function applyBounds() {
@@ -838,7 +811,7 @@ function animate() {
     applyBounds();
   }
 
-  composer.render();
+  renderer.render(scene, camera);
 }
 
 animate();
