@@ -12,9 +12,10 @@ function clamp(value, min, max) {
 }
 
 const galleryId = getGalleryId();
-const roomWidth = 6;
-const roomDepth = 8;
-const roomHeight = 4.5;
+const roomScale = 1.5;
+const roomWidth = 6 * roomScale;
+const roomDepth = 8 * roomScale;
+const roomHeight = 4.5 * roomScale;
 const playerHeight = 1.6;
 const playerMargin = 0.35;
 
@@ -552,7 +553,8 @@ function addPhoto(url, position, rotationY = 0) {
   contactShadow.position.y = 0.01;
   contactShadow.receiveShadow = true;
 
-  const maxSide = 1.5;
+  const paintingScale = 1.5;
+  const maxSide = 1.5 * paintingScale;
   const framePadding = 0.1;
   const frameDepth = 0.084;
   const frameWidth = 0.045;
@@ -690,7 +692,7 @@ function addPhoto(url, position, rotationY = 0) {
 }
 
 const basePath = `images/${galleryId}/`;
-const wallInset = 0.14;
+const wallInset = 0.08;
 const photos = [
   { file: '1.jpg', pos: { x: -1.1, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
   { file: '2.jpg', pos: { x: 1.1, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
