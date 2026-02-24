@@ -25,7 +25,7 @@ const doorLeafWidth = 0.92;
 const doorLeafHeight = 2.2;
 const doorLeafDepth = 0.045;
 const doorOpeningWidth = doorLeafWidth + doorJambThickness * 2 + 0.01;
-const doorOpeningHeight = doorLeafHeight + doorJambThickness + 0.04;
+const doorOpeningHeight = doorLeafHeight + doorJambThickness;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9e6df);
@@ -548,8 +548,8 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth / 2);
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
 
-const windowOpeningWidth = 2.3;
-const windowOpeningHeight = 3.2;
+const windowOpeningWidth = 1.61;
+const windowOpeningHeight = 2.24;
 const windowCenterY = roomHeight * 0.5;
 const windowBottomY = windowCenterY - windowOpeningHeight / 2;
 const windowTopY = windowCenterY + windowOpeningHeight / 2;
