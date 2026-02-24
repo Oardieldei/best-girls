@@ -19,6 +19,13 @@ const roomHeight = 4.5 * roomScale;
 const wallThickness = 0.25;
 const playerHeight = 1.6;
 const playerMargin = 0.35;
+const doorFrameDepth = 0.1;
+const doorJambThickness = 0.1;
+const doorLeafWidth = 0.92;
+const doorLeafHeight = 2.2;
+const doorLeafDepth = 0.045;
+const doorOpeningWidth = doorLeafWidth + doorJambThickness * 2 + 0.01;
+const doorOpeningHeight = doorLeafHeight + doorJambThickness + 0.04;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9e6df);
@@ -175,11 +182,11 @@ function createPlasterWallMaps() {
   colorCtx.fillRect(0, 0, 1024, 1024);
 
   const sideGradient = colorCtx.createLinearGradient(0, 0, 1024, 0);
-  sideGradient.addColorStop(0, 'rgba(104, 112, 120, 0.085)');
-  sideGradient.addColorStop(0.28, 'rgba(255, 255, 255, 0.015)');
+  sideGradient.addColorStop(0, 'rgba(104, 112, 120, 0.03)');
+  sideGradient.addColorStop(0.28, 'rgba(255, 255, 255, 0.008)');
   sideGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-  sideGradient.addColorStop(0.72, 'rgba(255, 255, 255, 0.015)');
-  sideGradient.addColorStop(1, 'rgba(97, 106, 112, 0.085)');
+  sideGradient.addColorStop(0.72, 'rgba(255, 255, 255, 0.008)');
+  sideGradient.addColorStop(1, 'rgba(97, 106, 112, 0.03)');
   colorCtx.fillStyle = sideGradient;
   colorCtx.fillRect(0, 0, 1024, 1024);
 
@@ -511,8 +518,6 @@ createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth /
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
 createWall(roomDepth, roomHeight, wallThickness, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
 
-const doorOpeningWidth = 1.16;
-const doorOpeningHeight = 2.34;
 const sideDoorCenterZ = -roomDepth / 2 + 1.45;
 const sideDoorMinZ = sideDoorCenterZ - doorOpeningWidth / 2;
 const sideDoorMaxZ = sideDoorCenterZ + doorOpeningWidth / 2;
@@ -549,11 +554,11 @@ function createDoorAssembly() {
     metalness: 0.02
   });
 
-  const frameDepth = 0.1;
-  const jambThickness = 0.1;
-  const leafWidth = 0.92;
-  const leafHeight = 2.2;
-  const leafDepth = 0.045;
+  const frameDepth = doorFrameDepth;
+  const jambThickness = doorJambThickness;
+  const leafWidth = doorLeafWidth;
+  const leafHeight = doorLeafHeight;
+  const leafDepth = doorLeafDepth;
   const openingWidth = leafWidth + jambThickness * 2;
   const openingHeight = leafHeight + jambThickness;
 
