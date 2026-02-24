@@ -181,15 +181,6 @@ function createPlasterWallMaps() {
   colorCtx.fillStyle = '#c8cdd0';
   colorCtx.fillRect(0, 0, 1024, 1024);
 
-  const sideGradient = colorCtx.createLinearGradient(0, 0, 1024, 0);
-  sideGradient.addColorStop(0, 'rgba(104, 112, 120, 0.03)');
-  sideGradient.addColorStop(0.28, 'rgba(255, 255, 255, 0.008)');
-  sideGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-  sideGradient.addColorStop(0.72, 'rgba(255, 255, 255, 0.008)');
-  sideGradient.addColorStop(1, 'rgba(97, 106, 112, 0.03)');
-  colorCtx.fillStyle = sideGradient;
-  colorCtx.fillRect(0, 0, 1024, 1024);
-
   roughCtx.fillStyle = 'rgb(164, 164, 164)';
   roughCtx.fillRect(0, 0, 1024, 1024);
 
