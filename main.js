@@ -29,7 +29,7 @@ const doorOpeningHeight = doorLeafHeight + doorJambThickness + 0.04;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9e6df);
-scene.fog = new THREE.FogExp2(0xaaaaaa, 0.02);
+scene.fog = new THREE.FogExp2(0xddeeff, 0.01);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, playerHeight, 0);
@@ -38,6 +38,8 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
 renderer.physicallyCorrectLights = true;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -67,12 +69,50 @@ keyLight.shadow.bias = -0.00008;
 keyLight.shadow.normalBias = 0.015;
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xf0f4ff, 0.3);
-fillLight.position.set(-2, roomHeight * 0.75, 2);
-scene.add(fillLight);
-
 const textureLoader = new THREE.TextureLoader();
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+
+function createWindowGradientTexture(width = 1024, height = 1024) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const verticalGradient = ctx.createLinearGradient(0, 0, 0, height);
+  verticalGradient.addColorStop(0, '#a9ceff');
+  verticalGradient.addColorStop(0.52, '#f2f8ff');
+  verticalGradient.addColorStop(1, '#fff4de');
+  ctx.fillStyle = verticalGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const sunGlow = ctx.createRadialGradient(width * 0.72, height * 0.28, width * 0.04, width * 0.72, height * 0.28, width * 0.34);
+  sunGlow.addColorStop(0, 'rgba(255, 246, 220, 0.92)');
+  sunGlow.addColorStop(1, 'rgba(255, 246, 220, 0)');
+  ctx.fillStyle = sunGlow;
+  ctx.fillRect(0, 0, width, height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createFloorLightTexture(width = 1024, height = 512) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const gradient = ctx.createRadialGradient(width * 0.2, height * 0.55, width * 0.02, width * 0.22, height * 0.55, width * 0.46);
+  gradient.addColorStop(0, 'rgba(233, 241, 255, 1)');
+  gradient.addColorStop(0.6, 'rgba(233, 241, 255, 0.38)');
+  gradient.addColorStop(1, 'rgba(233, 241, 255, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 function createWoodFloorTexture() {
   const canvas = document.createElement('canvas');
@@ -507,7 +547,81 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
 
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth / 2);
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
-createWall(roomDepth, roomHeight, wallThickness, -roomWidth / 2, roomHeight / 2, 0, Math.PI / 2);
+
+const windowOpeningWidth = 2.3;
+const windowOpeningHeight = 1.7;
+const windowCenterY = roomHeight * 0.53;
+const windowBottomY = windowCenterY - windowOpeningHeight / 2;
+const windowTopY = windowCenterY + windowOpeningHeight / 2;
+const windowHalfSpanZ = windowOpeningWidth / 2;
+
+createWall(roomDepth, windowBottomY, wallThickness, -roomWidth / 2, windowBottomY / 2, 0, Math.PI / 2);
+createWall(roomDepth, roomHeight - windowTopY, wallThickness, -roomWidth / 2, windowTopY + (roomHeight - windowTopY) / 2, 0, Math.PI / 2);
+createWall((roomDepth / 2) - windowHalfSpanZ, windowOpeningHeight, wallThickness, -roomWidth / 2, windowCenterY, -(roomDepth / 2 + windowHalfSpanZ) / 2, Math.PI / 2);
+createWall((roomDepth / 2) - windowHalfSpanZ, windowOpeningHeight, wallThickness, -roomWidth / 2, windowCenterY, (roomDepth / 2 + windowHalfSpanZ) / 2, Math.PI / 2);
+
+const windowGroup = new THREE.Group();
+const windowFrameMaterial = new THREE.MeshStandardMaterial({ color: 0xd8dde3, roughness: 0.4, metalness: 0.08 });
+const frameThickness = 0.07;
+const frameDepth = 0.12;
+const frameTopBottomGeometry = new THREE.BoxGeometry(windowOpeningWidth + frameThickness * 2, frameThickness, frameDepth);
+const frameSideGeometry = new THREE.BoxGeometry(frameThickness, windowOpeningHeight, frameDepth);
+
+const frameTop = new THREE.Mesh(frameTopBottomGeometry, windowFrameMaterial);
+frameTop.position.set(0, windowOpeningHeight / 2 + frameThickness / 2, 0);
+const frameBottom = frameTop.clone();
+frameBottom.position.y = -windowOpeningHeight / 2 - frameThickness / 2;
+const frameLeft = new THREE.Mesh(frameSideGeometry, windowFrameMaterial);
+frameLeft.position.set(-windowOpeningWidth / 2 - frameThickness / 2, 0, 0);
+const frameRight = frameLeft.clone();
+frameRight.position.x *= -1;
+
+const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameThickness * 0.9, windowOpeningHeight + frameThickness * 1.4, frameDepth * 0.95), windowFrameMaterial);
+
+const glassMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0xf2f9ff,
+  transmission: 1,
+  transparent: true,
+  opacity: 0.98,
+  roughness: 0.05,
+  metalness: 0,
+  thickness: 0.02,
+  envMapIntensity: 1.2
+});
+const glassGeometry = new THREE.PlaneGeometry(windowOpeningWidth - frameThickness * 0.9, windowOpeningHeight - frameThickness * 0.8);
+const innerGlass = new THREE.Mesh(glassGeometry, glassMaterial);
+innerGlass.position.x = frameDepth * 0.17;
+const outerGlass = new THREE.Mesh(glassGeometry, glassMaterial.clone());
+outerGlass.position.x = -frameDepth * 0.17;
+
+windowGroup.add(frameTop, frameBottom, frameLeft, frameRight, mullion, innerGlass, outerGlass);
+windowGroup.rotation.y = Math.PI / 2;
+windowGroup.position.set(-roomWidth / 2 + wallThickness / 2 + 0.005, windowCenterY, 0);
+scene.add(windowGroup);
+
+const skyPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(windowOpeningWidth * 2.2, windowOpeningHeight * 2.05),
+  new THREE.MeshBasicMaterial({ map: createWindowGradientTexture(), side: THREE.DoubleSide })
+);
+skyPlane.rotation.y = Math.PI / 2;
+skyPlane.position.set(-roomWidth / 2 - 1.2, windowCenterY + 0.15, 0);
+scene.add(skyPlane);
+
+const bloomCard = new THREE.Mesh(
+  new THREE.PlaneGeometry(windowOpeningWidth * 1.55, windowOpeningHeight * 1.4),
+  new THREE.MeshBasicMaterial({ color: 0xe8f2ff, transparent: true, opacity: 0.16, side: THREE.DoubleSide })
+);
+bloomCard.rotation.y = Math.PI / 2;
+bloomCard.position.set(-roomWidth / 2 + wallThickness / 2 + 0.03, windowCenterY, 0);
+scene.add(bloomCard);
+
+const fakeWindowLight = new THREE.Mesh(
+  new THREE.PlaneGeometry(3.7, 2.9),
+  new THREE.MeshBasicMaterial({ map: createFloorLightTexture(), transparent: true, opacity: 0.12, depthWrite: false })
+);
+fakeWindowLight.rotation.x = -Math.PI / 2;
+fakeWindowLight.position.set(-roomWidth / 2 + 1.6, 0.04, 0);
+scene.add(fakeWindowLight);
 
 const sideDoorCenterZ = -roomDepth / 2 + 1.45;
 const sideDoorMinZ = sideDoorCenterZ - doorOpeningWidth / 2;
