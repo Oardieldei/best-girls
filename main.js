@@ -156,16 +156,18 @@ function createWoodFloorRoughnessMap() {
 
 function createPlasterWallMaps() {
   const colorCanvas = document.createElement('canvas');
-  const bumpCanvas = document.createElement('canvas');
+  const heightCanvas = document.createElement('canvas');
   const roughnessCanvas = document.createElement('canvas');
-  [colorCanvas, bumpCanvas, roughnessCanvas].forEach((c) => {
+  const aoCanvas = document.createElement('canvas');
+  [colorCanvas, heightCanvas, roughnessCanvas, aoCanvas].forEach((c) => {
     c.width = 1024;
     c.height = 1024;
   });
 
   const colorCtx = colorCanvas.getContext('2d');
-  const bumpCtx = bumpCanvas.getContext('2d');
+  const heightCtx = heightCanvas.getContext('2d');
   const roughCtx = roughnessCanvas.getContext('2d');
+  const aoCtx = aoCanvas.getContext('2d');
 
   colorCtx.fillStyle = '#c8cdd0';
   colorCtx.fillRect(0, 0, 1024, 1024);
@@ -181,6 +183,12 @@ function createPlasterWallMaps() {
 
   roughCtx.fillStyle = 'rgb(164, 164, 164)';
   roughCtx.fillRect(0, 0, 1024, 1024);
+
+  heightCtx.fillStyle = 'rgb(128, 128, 255)';
+  heightCtx.fillRect(0, 0, 1024, 1024);
+
+  aoCtx.fillStyle = 'rgb(228, 228, 228)';
+  aoCtx.fillRect(0, 0, 1024, 1024);
 
   for (let i = 0; i < 3500; i += 1) {
     const x = Math.random() * 1024;
@@ -200,36 +208,100 @@ function createPlasterWallMaps() {
     const y = Math.random() * 1024;
     const radius = 0.25 + Math.random() * 0.9;
     const shade = 198 + Math.random() * 24;
-    bumpCtx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
-    bumpCtx.beginPath();
-    bumpCtx.arc(x, y, radius, 0, Math.PI * 2);
-    bumpCtx.fill();
+    heightCtx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+    heightCtx.beginPath();
+    heightCtx.arc(x, y, radius, 0, Math.PI * 2);
+    heightCtx.fill();
+
+    const aoShade = 182 + Math.random() * 38;
+    aoCtx.fillStyle = `rgba(${aoShade}, ${aoShade}, ${aoShade}, ${0.06 + Math.random() * 0.09})`;
+    aoCtx.beginPath();
+    aoCtx.arc(x, y, radius * 1.5, 0, Math.PI * 2);
+    aoCtx.fill();
   }
 
   for (let i = 0; i < 750; i += 1) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
     const len = 2 + Math.random() * 4;
-    bumpCtx.strokeStyle = `rgba(138, 138, 138, ${0.025 + Math.random() * 0.03})`;
-    bumpCtx.lineWidth = 0.55;
-    bumpCtx.beginPath();
-    bumpCtx.moveTo(x, y);
-    bumpCtx.lineTo(x + len, y + (Math.random() - 0.5) * 2);
-    bumpCtx.stroke();
+    const strokeAlpha = 0.025 + Math.random() * 0.03;
+    heightCtx.strokeStyle = `rgba(138, 138, 138, ${strokeAlpha})`;
+    heightCtx.lineWidth = 0.55;
+    heightCtx.beginPath();
+    heightCtx.moveTo(x, y);
+    heightCtx.lineTo(x + len, y + (Math.random() - 0.5) * 2);
+    heightCtx.stroke();
+
+    aoCtx.strokeStyle = `rgba(170, 170, 170, ${strokeAlpha * 1.2})`;
+    aoCtx.lineWidth = 0.8;
+    aoCtx.beginPath();
+    aoCtx.moveTo(x, y);
+    aoCtx.lineTo(x + len * 1.2, y + (Math.random() - 0.5) * 2.6);
+    aoCtx.stroke();
+  }
+
+  for (let i = 0; i < 2000; i += 1) {
+    const x = Math.random() * 1024;
+    const y = Math.random() * 1024;
+    const roughnessTone = 132 + Math.random() * 54;
+    roughCtx.fillStyle = `rgb(${roughnessTone}, ${roughnessTone}, ${roughnessTone})`;
+    roughCtx.fillRect(x, y, 1.4 + Math.random() * 2.8, 1.4 + Math.random() * 2.8);
   }
 
   const colorMap = new THREE.CanvasTexture(colorCanvas);
   colorMap.colorSpace = THREE.SRGBColorSpace;
-  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  const normalMap = createNormalMapFromHeightCanvas(heightCanvas, 2.2);
   const roughnessMap = new THREE.CanvasTexture(roughnessCanvas);
+  const aoMap = new THREE.CanvasTexture(aoCanvas);
 
-  [colorMap, bumpMap, roughnessMap].forEach((texture) => {
+  [colorMap, normalMap, roughnessMap, aoMap].forEach((texture) => {
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(3, 2);
     texture.anisotropy = maxAnisotropy;
   });
 
-  return { colorMap, bumpMap, roughnessMap };
+  return { colorMap, normalMap, roughnessMap, aoMap };
+}
+
+function createNormalMapFromHeightCanvas(heightCanvas, strength = 2) {
+  const width = heightCanvas.width;
+  const height = heightCanvas.height;
+  const sourceCtx = heightCanvas.getContext('2d');
+  const sourceData = sourceCtx.getImageData(0, 0, width, height).data;
+
+  const normalCanvas = document.createElement('canvas');
+  normalCanvas.width = width;
+  normalCanvas.height = height;
+  const normalCtx = normalCanvas.getContext('2d');
+  const normalImage = normalCtx.createImageData(width, height);
+  const normalData = normalImage.data;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const leftX = (x - 1 + width) % width;
+      const rightX = (x + 1) % width;
+      const upY = (y - 1 + height) % height;
+      const downY = (y + 1) % height;
+
+      const left = sourceData[(y * width + leftX) * 4] / 255;
+      const right = sourceData[(y * width + rightX) * 4] / 255;
+      const up = sourceData[(upY * width + x) * 4] / 255;
+      const down = sourceData[(downY * width + x) * 4] / 255;
+
+      const dx = (right - left) * strength;
+      const dy = (down - up) * strength;
+      const normal = new THREE.Vector3(-dx, -dy, 1).normalize();
+
+      normalData[index] = (normal.x * 0.5 + 0.5) * 255;
+      normalData[index + 1] = (normal.y * 0.5 + 0.5) * 255;
+      normalData[index + 2] = (normal.z * 0.5 + 0.5) * 255;
+      normalData[index + 3] = 255;
+    }
+  }
+
+  normalCtx.putImageData(normalImage, 0, 0);
+  return new THREE.CanvasTexture(normalCanvas);
 }
 
 function createCeilingPanelTexture() {
@@ -331,15 +403,23 @@ scene.add(ceiling);
 const wallMaps = createPlasterWallMaps();
 const wallMaterial = new THREE.MeshStandardMaterial({
   map: wallMaps.colorMap,
-  bumpMap: wallMaps.bumpMap,
-  bumpScale: 0.018,
+  normalMap: wallMaps.normalMap,
+  normalScale: new THREE.Vector2(0.65, 0.65),
   roughnessMap: wallMaps.roughnessMap,
-  roughness: 0.86,
+  aoMap: wallMaps.aoMap,
+  aoMapIntensity: 1,
+  roughness: 1,
   metalness: 0
 });
 
+function createWallGeometry(width, height, depth) {
+  const geometry = new THREE.BoxGeometry(width, height, depth);
+  geometry.setAttribute('uv2', new THREE.Float32BufferAttribute(geometry.attributes.uv.array, 2));
+  return geometry;
+}
+
 function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
-  const wall = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMaterial);
+  const wall = new THREE.Mesh(createWallGeometry(width, height, depth), wallMaterial);
   wall.position.set(posX, posY, posZ);
   wall.rotation.y = rotY;
   wall.receiveShadow = true;
@@ -361,7 +441,7 @@ const chamferDepth = 0.035;
   { x: roomWidth / 2 - chamferSize * 0.5, z: -roomDepth / 2 + chamferSize * 0.5 },
   { x: -roomWidth / 2 + chamferSize * 0.5, z: -roomDepth / 2 + chamferSize * 0.5 }
 ].forEach(({ x, z }) => {
-  const chamfer = new THREE.Mesh(new THREE.BoxGeometry(chamferSize, roomHeight, chamferDepth), cornerChamferMaterial);
+  const chamfer = new THREE.Mesh(createWallGeometry(chamferSize, roomHeight, chamferDepth), cornerChamferMaterial);
   chamfer.position.set(x, roomHeight / 2, z);
   chamfer.rotation.y = Math.PI / 4;
   scene.add(chamfer);
