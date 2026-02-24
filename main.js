@@ -653,7 +653,11 @@ function createDoorAssembly() {
   gapShadowPlane.position.set(0, 0.003, -0.02);
 
   doorGroup.add(architrave, jamb, doorLeaf, gapShadowPlane);
-  doorGroup.position.set(roomWidth / 2 - wallThickness / 2 - frameDepth / 2 - 0.008, 0, sideDoorCenterZ);
+
+  // Keep the architrave flush with the room-side wall while recessing the jamb and leaf into the opening.
+  const roomSideWallPlaneX = roomWidth / 2 - wallThickness / 2;
+  const architraveRoomSideOffset = frameDepth / 2 + architraveThickness + 0.004;
+  doorGroup.position.set(roomSideWallPlaneX + architraveRoomSideOffset, 0, sideDoorCenterZ);
   doorGroup.rotation.y = -Math.PI / 2;
   scene.add(doorGroup);
 }
