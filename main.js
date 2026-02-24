@@ -1142,21 +1142,26 @@ const photos = [
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
 
+const barrierColliders = [];
+
 function addMuseumBarriers() {
   const barrierOffsetFromWall = 0.6;
   const ropeSag = 0.12;
   const postBaseHeight = 0.06;
   const postTopRadius = 0.06;
   const postBaseY = postBaseHeight / 2;
-  const postDistanceOnWall = 2.05;
+  const uniformBarrierSpan = 2.05 * 0.88;
   const ropeAnchorYOffset = 0.08;
+  const barrierConfigs = photos.map((photo) => {
+    const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), photo.rot);
+    const offset = barrierOffsetFromWall - wallInset;
 
-  const barrierConfigs = [
-    { center: new THREE.Vector3(0, 0, -roomDepth / 2 + barrierOffsetFromWall), direction: 'x', span: postDistanceOnWall },
-    { center: new THREE.Vector3(0, 0, roomDepth / 2 - barrierOffsetFromWall), direction: 'x', span: postDistanceOnWall },
-    { center: new THREE.Vector3(roomWidth / 2 - barrierOffsetFromWall, 0, 0), direction: 'z', span: postDistanceOnWall * 0.88 },
-    { center: new THREE.Vector3(-roomWidth / 2 + barrierOffsetFromWall, 0, 0), direction: 'z', span: postDistanceOnWall * 1.38 }
-  ];
+    return {
+      center: new THREE.Vector3(photo.pos.x, 0, photo.pos.z).addScaledVector(inwardNormal, offset),
+      direction: Math.abs(inwardNormal.x) > Math.abs(inwardNormal.z) ? 'z' : 'x',
+      span: uniformBarrierSpan
+    };
+  });
 
   const instanceCount = barrierConfigs.length * 2;
   const postMaterial = new THREE.MeshPhysicalMaterial({
@@ -1198,7 +1203,10 @@ function addMuseumBarriers() {
   const temp = new THREE.Object3D();
   const leftPost = new THREE.Vector3();
   const rightPost = new THREE.Vector3();
+  const colliderDepth = 0.09;
   let instanceIndex = 0;
+
+  barrierColliders.length = 0;
 
   barrierConfigs.forEach((config, barrierIndex) => {
     const halfSpan = config.span / 2;
@@ -1237,6 +1245,14 @@ function addMuseumBarriers() {
       postContactShadows.setMatrixAt(instanceIndex, temp.matrix);
 
       instanceIndex += 1;
+    });
+
+    barrierColliders.push({
+      centerX: config.center.x,
+      centerZ: config.center.z,
+      halfSpan,
+      halfDepth: colliderDepth,
+      direction: config.direction
     });
 
     const ropeStart = new THREE.Vector3(leftPost.x, postBaseHeight + 0.96 - ropeAnchorYOffset, leftPost.z);
@@ -1304,9 +1320,31 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-function applyBounds() {
+function applyBounds(previousX, previousZ) {
   camera.position.x = clamp(camera.position.x, -roomWidth / 2 + playerMargin, roomWidth / 2 - playerMargin);
   camera.position.z = clamp(camera.position.z, -roomDepth / 2 + playerMargin, roomDepth / 2 -playerMargin);
+
+  const playerRadius = 0.18;
+  barrierColliders.forEach((collider) => {
+    if (collider.direction === 'x') {
+      const insideX = Math.abs(camera.position.x - collider.centerX) <= collider.halfSpan + playerRadius;
+      const insideZ = Math.abs(camera.position.z - collider.centerZ) <= collider.halfDepth + playerRadius;
+      if (!insideX || !insideZ) return;
+
+      camera.position.z = previousZ < collider.centerZ
+        ? collider.centerZ - collider.halfDepth - playerRadius
+        : collider.centerZ + collider.halfDepth + playerRadius;
+      return;
+    }
+
+    const insideZ = Math.abs(camera.position.z - collider.centerZ) <= collider.halfSpan + playerRadius;
+    const insideX = Math.abs(camera.position.x - collider.centerX) <= collider.halfDepth + playerRadius;
+    if (!insideX || !insideZ) return;
+
+    camera.position.x = previousX < collider.centerX
+      ? collider.centerX - collider.halfDepth - playerRadius
+      : collider.centerX + collider.halfDepth + playerRadius;
+  });
 
   if (isJumping) {
     const nearApex = verticalVelocity > 0 && verticalVelocity < 0.045;
@@ -1354,11 +1392,13 @@ function animate() {
   }
 
   if (controls.isLocked) {
+    const previousX = camera.position.x;
+    const previousZ = camera.position.z;
     if (move.forward) controls.moveForward(speed);
     if (move.back) controls.moveForward(-speed);
     if (move.left) controls.moveRight(-speed);
     if (move.right) controls.moveRight(speed);
-    applyBounds();
+    applyBounds(previousX, previousZ);
   }
 
   renderer.render(scene, camera);
