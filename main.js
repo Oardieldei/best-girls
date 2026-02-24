@@ -72,7 +72,8 @@ scene.add(keyLight);
 
 const textureLoader = new THREE.TextureLoader();
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-const plateGeometry = new THREE.BoxGeometry(0.16, 0.04, 0.005);
+const plateScale = 4;
+const plateGeometry = new THREE.BoxGeometry(0.16 * plateScale, 0.04 * plateScale, 0.005 * plateScale);
 const plateMaterial = new THREE.MeshStandardMaterial({
   color: 0x3a3a3a,
   roughness: 0.65,
@@ -95,12 +96,12 @@ function getRandomUniqueWords(words, count) {
 
 function createTextTexture(text) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 128;
+  canvas.width = 1024;
+  canvas.height = 256;
 
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = '600 64px Inter, sans-serif';
+  ctx.font = '600 128px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#e6e1d8';
@@ -133,10 +134,10 @@ function createPlate(text) {
     transparent: true
   });
   const textPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.15, 0.035),
+    new THREE.PlaneGeometry(0.6, 0.14),
     textMaterial
   );
-  textPlane.position.z = 0.003;
+  textPlane.position.z = 0.012;
   plate.add(textPlane);
   return plate;
 }
@@ -619,7 +620,7 @@ createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 
 
 const windowOpeningWidth = 1.61;
 const windowOpeningHeight = 2.24;
-const windowCenterY = roomHeight * 0.5;
+const windowCenterY = roomHeight * 0.5 - 0.2;
 const windowBottomY = windowCenterY - windowOpeningHeight / 2;
 const windowTopY = windowCenterY + windowOpeningHeight / 2;
 const windowHalfSpanZ = windowOpeningWidth / 2;
@@ -1206,8 +1207,8 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
 
 const basePath = `images/${galleryId}/`;
 const wallInset = 0.08;
-const photoSpacingScale = 0.8;
-const shortWallPhotoOffset = (roomWidth / 4) * photoSpacingScale;
+const shortWallSegment = roomWidth / 3;
+const shortWallPhotoOffset = shortWallSegment / 2;
 const doorWallCornerZ = roomDepth / 2;
 const doorWallSpacing = (doorWallCornerZ - sideDoorMaxZ) / 3;
 const firstDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing;
