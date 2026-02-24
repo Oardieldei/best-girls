@@ -72,6 +72,74 @@ scene.add(keyLight);
 
 const textureLoader = new THREE.TextureLoader();
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+const plateGeometry = new THREE.BoxGeometry(0.16, 0.04, 0.005);
+const plateMaterial = new THREE.MeshStandardMaterial({
+  color: 0x3a3a3a,
+  roughness: 0.65,
+  metalness: 0.1
+});
+const plateTextWords = [
+  'Beautiful', 'Gorgeous', 'Stunning', 'Lovely', 'Charming', 'Graceful', 'Elegant', 'Radiant', 'Adorable', 'Sweet',
+  'Warm', 'Genuine', 'Compassionate', 'Pure', 'Strong', 'Brave', 'Fearless', 'Confident', 'Independent', 'Resilient',
+  'Ambitious', 'Smart', 'Intelligent', 'Wise', 'Creative', 'Talented', 'Inspiring', 'Magnetic', 'Unforgettable'
+];
+
+function getRandomUniqueWords(words, count) {
+  const shuffled = [...words];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  }
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+function createTextTexture(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.font = '600 64px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e6e1d8';
+  ctx.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
+
+  ctx.globalAlpha = 0.03;
+  for (let i = 0; i < 2000; i += 1) {
+    ctx.fillRect(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      1,
+      1
+    );
+  }
+  ctx.globalAlpha = 1;
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 4;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
+function createPlate(text) {
+  const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+  const texture = createTextTexture(text);
+  const textMaterial = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true
+  });
+  const textPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.15, 0.035),
+    textMaterial
+  );
+  textPlane.position.z = 0.003;
+  plate.add(textPlane);
+  return plate;
+}
 
 function createWindowGradientTexture(width = 1024, height = 1024) {
   const canvas = document.createElement('canvas');
@@ -975,7 +1043,7 @@ function createPlaceholderTexture(label) {
   return texture;
 }
 
-function addPhoto(url, position, rotationY = 0) {
+function addPhoto(url, position, rotationY = 0, plateText = '') {
   const group = new THREE.Group();
 
   const contactShadow = new THREE.Mesh(
@@ -1122,6 +1190,18 @@ function addPhoto(url, position, rotationY = 0) {
   group.position.set(position.x, position.y, position.z);
   group.rotation.y = rotationY;
   scene.add(group);
+
+  if (plateText) {
+    const plate = createPlate(plateText);
+    const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
+    plate.position.set(
+      position.x + inwardNormal.x * 0.01,
+      position.y - 1.6,
+      position.z + inwardNormal.z * 0.01
+    );
+    plate.rotation.y = rotationY;
+    scene.add(plate);
+  }
 }
 
 const basePath = `images/${galleryId}/`;
@@ -1134,18 +1214,19 @@ const firstDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing;
 const secondDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing * 2;
 const windowWallPositivePaintingZ = (roomDepth / 2 + windowHalfSpanZ) / 2;
 const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
+const selectedPlateWords = getRandomUniqueWords(plateTextWords, 8);
 const photos = [
-  { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 1.8, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: 1.8, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 1.8, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
+  { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 3.6, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 3.6, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 3.6, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 3.6, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
+  { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: 3.6, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: 3.6, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 3.6, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 3.6, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
 ];
 
-photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
+photos.forEach((photo, index) => addPhoto(basePath + photo.file, photo.pos, photo.rot, selectedPlateWords[index]));
 
 const barrierColliders = [];
 
