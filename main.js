@@ -58,7 +58,7 @@ new RGBELoader().load(
   }
 );
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.58);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.52);
 scene.add(ambientLight);
 
 const keyLight = new THREE.SpotLight(0xfff8ee, 165, 28, Math.PI / 4, 0.38, 1.5);
@@ -548,9 +548,8 @@ function createWall(width, height, depth, posX, posY, posZ, rotY = 0) {
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, -roomDepth / 2);
 createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 2);
 
-const windowScale = 0.7;
-const windowOpeningWidth = 2.3 * windowScale;
-const windowOpeningHeight = 3.2 * windowScale;
+const windowOpeningWidth = 2.3;
+const windowOpeningHeight = 3.2;
 const windowCenterY = roomHeight * 0.5;
 const windowBottomY = windowCenterY - windowOpeningHeight / 2;
 const windowTopY = windowCenterY + windowOpeningHeight / 2;
@@ -563,8 +562,8 @@ createWall((roomDepth / 2) - windowHalfSpanZ, windowOpeningHeight, wallThickness
 
 const windowGroup = new THREE.Group();
 const windowFrameMaterial = new THREE.MeshStandardMaterial({ color: 0xd8dde3, roughness: 0.4, metalness: 0.08 });
-const frameThickness = 0.07 * windowScale;
-const frameDepth = 0.12 * windowScale;
+const frameThickness = 0.07;
+const frameDepth = 0.12;
 const frameTopBottomGeometry = new THREE.BoxGeometry(windowOpeningWidth + frameThickness * 2, frameThickness, frameDepth);
 const frameSideGeometry = new THREE.BoxGeometry(frameThickness, windowOpeningHeight, frameDepth);
 
@@ -619,11 +618,11 @@ bloomCard.position.set(-roomWidth / 2 + wallThickness / 2 + 0.03, windowCenterY,
 scene.add(bloomCard);
 
 const fakeWindowLight = new THREE.Mesh(
-  new THREE.PlaneGeometry(4.5 * windowScale, 3.6 * windowScale),
+  new THREE.PlaneGeometry(4.5, 3.6),
   new THREE.MeshBasicMaterial({ map: createFloorLightTexture(), transparent: true, opacity: 0.12, depthWrite: false })
 );
 fakeWindowLight.rotation.x = -Math.PI / 2;
-fakeWindowLight.position.set(-roomWidth / 2 + 1.9 * windowScale, 0.04, 0);
+fakeWindowLight.position.set(-roomWidth / 2 + 1.9, 0.04, 0);
 scene.add(fakeWindowLight);
 
 const sideDoorCenterZ = -roomDepth / 2 + 1.45;
@@ -1016,7 +1015,7 @@ function addPhoto(url, position, rotationY = 0) {
 
   const photo = new THREE.Mesh(
     new THREE.PlaneGeometry(maxSide, maxSide),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.02 })
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
 
   photo.material.polygonOffset = true;
@@ -1032,7 +1031,7 @@ function addPhoto(url, position, rotationY = 0) {
   frameGroup.add(wallShadow);
   frameGroup.add(frameMesh);
 
-  const backLight = new THREE.RectAreaLight(0xffedcf, 0.35, 1.6, 1.1);
+  const backLight = new THREE.RectAreaLight(0xffedcf, 0.85, 1.6, 1.1);
   backLight.position.set(0, 0, -0.055);
   backLight.lookAt(0, 0, -1);
   frameGroup.add(backLight);
