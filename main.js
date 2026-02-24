@@ -195,24 +195,6 @@ function createPlasterWallMaps() {
     colorCtx.fillRect(x + Math.random() * 2, y + Math.random() * 2, size, size);
   }
 
-  const floorDustGradient = colorCtx.createLinearGradient(0, 1024, 0, 0);
-  floorDustGradient.addColorStop(0, 'rgba(116, 105, 92, 0.22)');
-  floorDustGradient.addColorStop(0.09, 'rgba(124, 113, 98, 0.14)');
-  floorDustGradient.addColorStop(0.17, 'rgba(132, 122, 108, 0.06)');
-  floorDustGradient.addColorStop(0.27, 'rgba(132, 122, 108, 0)');
-  colorCtx.fillStyle = floorDustGradient;
-  colorCtx.fillRect(0, 0, 1024, 1024);
-
-  for (let i = 0; i < 1200; i += 1) {
-    const x = Math.random() * 1024;
-    const y = 820 + Math.random() * 200;
-    const w = 2 + Math.random() * 6;
-    const h = 0.7 + Math.random() * 1.8;
-    const alpha = 0.02 + Math.random() * 0.055;
-    colorCtx.fillStyle = `rgba(96, 83, 70, ${alpha})`;
-    colorCtx.fillRect(x, y, w, h);
-  }
-
   for (let i = 0; i < 7000; i += 1) {
     const x = Math.random() * 1024;
     const y = Math.random() * 1024;
@@ -235,20 +217,6 @@ function createPlasterWallMaps() {
     bumpCtx.lineTo(x + len, y + (Math.random() - 0.5) * 2);
     bumpCtx.stroke();
   }
-
-  const bottomBumpGradient = bumpCtx.createLinearGradient(0, 1024, 0, 0);
-  bottomBumpGradient.addColorStop(0, 'rgba(156, 156, 156, 0.34)');
-  bottomBumpGradient.addColorStop(0.14, 'rgba(147, 147, 147, 0.16)');
-  bottomBumpGradient.addColorStop(0.26, 'rgba(128, 128, 128, 0)');
-  bumpCtx.fillStyle = bottomBumpGradient;
-  bumpCtx.fillRect(0, 0, 1024, 1024);
-
-  const roughBottomGradient = roughCtx.createLinearGradient(0, 1024, 0, 0);
-  roughBottomGradient.addColorStop(0, 'rgba(214, 214, 214, 0.34)');
-  roughBottomGradient.addColorStop(0.12, 'rgba(197, 197, 197, 0.2)');
-  roughBottomGradient.addColorStop(0.26, 'rgba(180, 180, 180, 0)');
-  roughCtx.fillStyle = roughBottomGradient;
-  roughCtx.fillRect(0, 0, 1024, 1024);
 
   const colorMap = new THREE.CanvasTexture(colorCanvas);
   colorMap.colorSpace = THREE.SRGBColorSpace;
