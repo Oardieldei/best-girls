@@ -1142,6 +1142,125 @@ const photos = [
 
 photos.forEach((photo) => addPhoto(basePath + photo.file, photo.pos, photo.rot));
 
+function addMuseumBarriers() {
+  const barrierOffsetFromWall = 0.6;
+  const ropeSag = 0.12;
+  const postBaseHeight = 0.06;
+  const postTopRadius = 0.06;
+  const postBaseY = postBaseHeight / 2;
+  const postDistanceOnWall = 2.05;
+  const ropeAnchorYOffset = 0.08;
+
+  const barrierConfigs = [
+    { center: new THREE.Vector3(0, 0, -roomDepth / 2 + barrierOffsetFromWall), direction: 'x', span: postDistanceOnWall },
+    { center: new THREE.Vector3(0, 0, roomDepth / 2 - barrierOffsetFromWall), direction: 'x', span: postDistanceOnWall },
+    { center: new THREE.Vector3(roomWidth / 2 - barrierOffsetFromWall, 0, 0), direction: 'z', span: postDistanceOnWall * 0.88 },
+    { center: new THREE.Vector3(-roomWidth / 2 + barrierOffsetFromWall, 0, 0), direction: 'z', span: postDistanceOnWall * 1.38 }
+  ];
+
+  const instanceCount = barrierConfigs.length * 2;
+  const postMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xb28a42,
+    metalness: 1,
+    roughness: 0.28,
+    envMapIntensity: 1.5
+  });
+  const postBaseMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x8d6d37,
+    metalness: 1,
+    roughness: 0.4,
+    envMapIntensity: 1.5
+  });
+  const ropeMaterial = new THREE.MeshStandardMaterial({
+    color: 0x5b1024,
+    roughness: 0.8,
+    metalness: 0
+  });
+
+  const baseGeometry = new THREE.CylinderGeometry(0.14, 0.16, postBaseHeight, 26);
+  const shaftGeometry = new THREE.CylinderGeometry(0.03, 0.035, 1, 20);
+  const topGeometry = new THREE.SphereGeometry(postTopRadius, 18, 16);
+  const contactShadowGeometry = new THREE.PlaneGeometry(0.34, 0.34);
+
+  const baseInstances = new THREE.InstancedMesh(baseGeometry, postBaseMaterial, instanceCount);
+  const shaftInstances = new THREE.InstancedMesh(shaftGeometry, postMaterial, instanceCount);
+  const topInstances = new THREE.InstancedMesh(topGeometry, postMaterial, instanceCount);
+  const postContactShadows = new THREE.InstancedMesh(contactShadowGeometry, new THREE.ShadowMaterial({ opacity: 0.2 }), instanceCount);
+
+  baseInstances.castShadow = true;
+  baseInstances.receiveShadow = true;
+  shaftInstances.castShadow = true;
+  shaftInstances.receiveShadow = true;
+  topInstances.castShadow = true;
+  topInstances.receiveShadow = true;
+  postContactShadows.receiveShadow = true;
+
+  const temp = new THREE.Object3D();
+  const leftPost = new THREE.Vector3();
+  const rightPost = new THREE.Vector3();
+  let instanceIndex = 0;
+
+  barrierConfigs.forEach((config, barrierIndex) => {
+    const halfSpan = config.span / 2;
+
+    if (config.direction === 'x') {
+      leftPost.set(config.center.x - halfSpan, 0, config.center.z);
+      rightPost.set(config.center.x + halfSpan, 0, config.center.z);
+    } else {
+      leftPost.set(config.center.x, 0, config.center.z - halfSpan);
+      rightPost.set(config.center.x, 0, config.center.z + halfSpan);
+    }
+
+    [leftPost, rightPost].forEach((postPos, localIndex) => {
+      const postHeight = 0.9 + ((barrierIndex * 2 + localIndex) % 5) * 0.05;
+
+      temp.position.set(postPos.x, postBaseY, postPos.z);
+      temp.rotation.set(0, 0, 0);
+      temp.scale.set(1, 1, 1);
+      temp.updateMatrix();
+      baseInstances.setMatrixAt(instanceIndex, temp.matrix);
+
+      temp.position.set(postPos.x, postBaseHeight + postHeight / 2, postPos.z);
+      temp.scale.set(1, postHeight, 1);
+      temp.updateMatrix();
+      shaftInstances.setMatrixAt(instanceIndex, temp.matrix);
+
+      temp.position.set(postPos.x, postBaseHeight + postHeight + postTopRadius * 0.8, postPos.z);
+      temp.scale.set(1, 1, 1);
+      temp.updateMatrix();
+      topInstances.setMatrixAt(instanceIndex, temp.matrix);
+
+      temp.position.set(postPos.x, 0.003, postPos.z);
+      temp.rotation.set(-Math.PI / 2, 0, 0);
+      temp.scale.set(1, 1, 1);
+      temp.updateMatrix();
+      postContactShadows.setMatrixAt(instanceIndex, temp.matrix);
+
+      instanceIndex += 1;
+    });
+
+    const ropeStart = new THREE.Vector3(leftPost.x, postBaseHeight + 0.96 - ropeAnchorYOffset, leftPost.z);
+    const ropeEnd = new THREE.Vector3(rightPost.x, postBaseHeight + 0.96 - ropeAnchorYOffset, rightPost.z);
+    const ropeMid = ropeStart.clone().lerp(ropeEnd, 0.5);
+    ropeMid.y -= ropeSag;
+
+    const ropeCurve = new THREE.CatmullRomCurve3([ropeStart, ropeMid, ropeEnd]);
+    const rope = new THREE.Mesh(new THREE.TubeGeometry(ropeCurve, 32, 0.02, 12, false), ropeMaterial);
+    rope.castShadow = true;
+    rope.receiveShadow = true;
+    scene.add(rope);
+  });
+
+  baseInstances.instanceMatrix.needsUpdate = true;
+  shaftInstances.instanceMatrix.needsUpdate = true;
+  topInstances.instanceMatrix.needsUpdate = true;
+  postContactShadows.instanceMatrix.needsUpdate = true;
+
+  scene.add(baseInstances, shaftInstances, topInstances, postContactShadows);
+}
+
+addMuseumBarriers();
+
 const controls = new PointerLockControls(camera, renderer.domElement);
 
 document.body.addEventListener('click', () => controls.lock());
