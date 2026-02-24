@@ -167,12 +167,7 @@ function createPlasterWallMaps() {
   const bumpCtx = bumpCanvas.getContext('2d');
   const roughCtx = roughnessCanvas.getContext('2d');
 
-  const gradient = colorCtx.createLinearGradient(0, 1024, 0, 0);
-  gradient.addColorStop(0, '#b6bcc1');
-  gradient.addColorStop(0.38, '#c3c9ce');
-  gradient.addColorStop(0.72, '#cfd3d0');
-  gradient.addColorStop(1, '#dadcd4');
-  colorCtx.fillStyle = gradient;
+  colorCtx.fillStyle = '#c8cdd0';
   colorCtx.fillRect(0, 0, 1024, 1024);
 
   const sideGradient = colorCtx.createLinearGradient(0, 0, 1024, 0);
@@ -184,11 +179,21 @@ function createPlasterWallMaps() {
   colorCtx.fillStyle = sideGradient;
   colorCtx.fillRect(0, 0, 1024, 1024);
 
-  const roughGradient = roughCtx.createLinearGradient(0, 1024, 0, 0);
-  roughGradient.addColorStop(0, 'rgb(178, 178, 178)');
-  roughGradient.addColorStop(1, 'rgb(146, 146, 146)');
-  roughCtx.fillStyle = roughGradient;
+  roughCtx.fillStyle = 'rgb(164, 164, 164)';
   roughCtx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 3500; i += 1) {
+    const x = Math.random() * 1024;
+    const y = Math.random() * 1024;
+    const alpha = 0.02 + Math.random() * 0.03;
+    const size = 0.8 + Math.random() * 1.8;
+    colorCtx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    colorCtx.fillRect(x, y, size, size);
+
+    const shadowAlpha = 0.018 + Math.random() * 0.03;
+    colorCtx.fillStyle = `rgba(98, 104, 110, ${shadowAlpha})`;
+    colorCtx.fillRect(x + Math.random() * 2, y + Math.random() * 2, size, size);
+  }
 
   for (let i = 0; i < 7000; i += 1) {
     const x = Math.random() * 1024;
