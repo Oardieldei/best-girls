@@ -21,6 +21,7 @@ const playerMargin = 0.35;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9e6df);
+scene.fog = new THREE.FogExp2(0xaaaaaa, 0.02);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, playerHeight, 0);
@@ -593,9 +594,9 @@ function addAirDust() {
   const dustMaterial = new THREE.PointsMaterial({
     map: dustTexture,
     color: 0xf6f1e8,
-    size: 0.04,
+    size: 0.02,
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.15,
     depthWrite: false,
     blending: THREE.AdditiveBlending
   });
