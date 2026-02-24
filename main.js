@@ -1,5 +1,6 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
 import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
+import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/RGBELoader.js';
 
 function getGalleryId() {
@@ -73,7 +74,7 @@ scene.add(keyLight);
 const textureLoader = new THREE.TextureLoader();
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 const plateScale = 4;
-const plateGeometry = new THREE.BoxGeometry(0.16 * plateScale, 0.04 * plateScale, 0.005 * plateScale);
+const plateGeometry = new RoundedBoxGeometry(0.16 * plateScale, 0.04 * plateScale, 0.005 * plateScale, 5, 0.01);
 const plateMaterial = new THREE.MeshStandardMaterial({
   color: 0x3a3a3a,
   roughness: 0.65,
@@ -101,7 +102,7 @@ function createTextTexture(text) {
 
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.font = '600 128px Inter, sans-serif';
+  ctx.font = '600 102px Inter, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#e6e1d8';
@@ -620,7 +621,7 @@ createWall(roomWidth, roomHeight, wallThickness, 0, roomHeight / 2, roomDepth / 
 
 const windowOpeningWidth = 1.61;
 const windowOpeningHeight = 2.24;
-const windowCenterY = roomHeight * 0.5 - 0.2;
+const windowCenterY = roomHeight * 0.5 - 0.35;
 const windowBottomY = windowCenterY - windowOpeningHeight / 2;
 const windowTopY = windowCenterY + windowOpeningHeight / 2;
 const windowHalfSpanZ = windowOpeningWidth / 2;
@@ -1197,7 +1198,7 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
     const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
     plate.position.set(
       position.x + inwardNormal.x * 0.08,
-      position.y - 1.6,
+      position.y - 1.75,
       position.z + inwardNormal.z * 0.08
     );
     plate.rotation.y = rotationY;
