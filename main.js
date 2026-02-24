@@ -551,8 +551,6 @@ function createDoorAssembly() {
 
   const frameDepth = 0.1;
   const jambThickness = 0.1;
-  const architraveThickness = 0.03;
-  const architraveWidth = 0.11;
   const leafWidth = 0.92;
   const leafHeight = 2.2;
   const leafDepth = 0.045;
@@ -560,7 +558,6 @@ function createDoorAssembly() {
   const openingHeight = leafHeight + jambThickness;
 
   const jambMaterial = new THREE.MeshStandardMaterial({ color: 0xb88d63, roughness: 0.44 });
-  const architraveMaterial = new THREE.MeshStandardMaterial({ color: 0xc19a73, roughness: 0.36 });
 
   const jambLeft = new THREE.Mesh(new THREE.BoxGeometry(jambThickness, openingHeight, frameDepth), jambMaterial);
   jambLeft.position.set(-openingWidth / 2 + jambThickness / 2, openingHeight / 2, 0);
@@ -572,18 +569,6 @@ function createDoorAssembly() {
   const jamb = new THREE.Group();
   jamb.name = 'Jamb';
   jamb.add(jambLeft, jambRight, jambTop);
-
-  const architrave = new THREE.Group();
-  architrave.name = 'Architrave';
-  const casingOuterW = openingWidth + architraveWidth * 2;
-  const casingOuterH = openingHeight + architraveWidth;
-  const casingLeft = new THREE.Mesh(new THREE.BoxGeometry(architraveWidth, casingOuterH, architraveThickness), architraveMaterial);
-  casingLeft.position.set(-casingOuterW / 2 + architraveWidth / 2, casingOuterH / 2, frameDepth / 2 + architraveThickness / 2 + 0.004);
-  const casingRight = casingLeft.clone();
-  casingRight.position.x *= -1;
-  const casingTop = new THREE.Mesh(new THREE.BoxGeometry(casingOuterW, architraveWidth, architraveThickness), architraveMaterial);
-  casingTop.position.set(0, casingOuterH - architraveWidth / 2, frameDepth / 2 + architraveThickness / 2 + 0.004);
-  architrave.add(casingLeft, casingRight, casingTop);
 
   const leafShape = createBeveledDoorLeafShape(leafWidth, leafHeight);
   const leafGeometry = new THREE.ExtrudeGeometry(leafShape, {
@@ -652,12 +637,12 @@ function createDoorAssembly() {
   gapShadowPlane.rotation.x = -Math.PI / 2;
   gapShadowPlane.position.set(0, 0.003, -0.02);
 
-  doorGroup.add(architrave, jamb, doorLeaf, gapShadowPlane);
+  doorGroup.add(jamb, doorLeaf, gapShadowPlane);
 
-  // Keep the architrave flush with the room-side wall while recessing the jamb and leaf into the opening.
+  // Keep the jamb flush with the room-side wall while recessing the leaf into the opening.
   const roomSideWallPlaneX = roomWidth / 2 - wallThickness / 2;
-  const architraveRoomSideOffset = frameDepth / 2 + architraveThickness + 0.004;
-  doorGroup.position.set(roomSideWallPlaneX + architraveRoomSideOffset, 0, sideDoorCenterZ);
+  const jambRoomSideOffset = frameDepth / 2 + 0.004;
+  doorGroup.position.set(roomSideWallPlaneX + jambRoomSideOffset, 0, sideDoorCenterZ);
   doorGroup.rotation.y = -Math.PI / 2;
   scene.add(doorGroup);
 }
@@ -693,7 +678,25 @@ function addTrim(geometry, material, x, y, z) {
 addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, -roomDepth / 2 + wallThickness / 2 + 0.01);
 addTrim(new THREE.BoxGeometry(roomWidth, baseboardHeight, baseboardDepth), trimMaterial, 0, baseboardY, roomDepth / 2 - wallThickness / 2 - 0.01);
 addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, -roomWidth / 2 + wallThickness / 2 + 0.01, baseboardY, 0);
-addTrim(new THREE.BoxGeometry(baseboardDepth, baseboardHeight, roomDepth), trimMaterial, roomWidth / 2 - wallThickness / 2 - 0.01, baseboardY, 0);
+const rightWallBaseboardSegments = [
+  { startZ: sideWallStart, endZ: sideDoorMinZ },
+  { startZ: sideDoorMaxZ, endZ: sideWallEnd }
+];
+
+rightWallBaseboardSegments.forEach(({ startZ, endZ }) => {
+  const segmentLength = endZ - startZ;
+  if (segmentLength <= 0) {
+    return;
+  }
+
+  addTrim(
+    new THREE.BoxGeometry(baseboardDepth, baseboardHeight, segmentLength),
+    trimMaterial,
+    roomWidth / 2 - wallThickness / 2 - 0.01,
+    baseboardY,
+    (startZ + endZ) / 2
+  );
+});
 
 const corniceHeight = 0.12;
 const corniceDepth = 0.1;
