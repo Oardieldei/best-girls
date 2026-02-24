@@ -1054,7 +1054,7 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
   contactShadow.position.y = 0.01;
   contactShadow.receiveShadow = true;
 
-  const paintingScale = 1.5;
+  const paintingScale = 1.5 * 1.3;
   const maxSide = 1.5 * paintingScale;
   const framePadding = 0.1;
   const frameDepth = 0.084;
@@ -1195,9 +1195,9 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
     const plate = createPlate(plateText);
     const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
     plate.position.set(
-      position.x + inwardNormal.x * 0.01,
+      position.x + inwardNormal.x * 0.08,
       position.y - 1.6,
-      position.z + inwardNormal.z * 0.01
+      position.z + inwardNormal.z * 0.08
     );
     plate.rotation.y = rotationY;
     scene.add(plate);
@@ -1215,15 +1215,16 @@ const secondDoorWallPaintingZ = sideDoorMaxZ + doorWallSpacing * 2;
 const windowWallPositivePaintingZ = (roomDepth / 2 + windowHalfSpanZ) / 2;
 const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
 const selectedPlateWords = getRandomUniqueWords(plateTextWords, 8);
+const paintingHeightY = 3.6 * 0.8;
 const photos = [
-  { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: 3.6, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: 3.6, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: 3.6, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: 3.6, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: 3.6, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: 3.6, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 3.6, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: 3.6, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
+  { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
+  { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
 ];
 
 photos.forEach((photo, index) => addPhoto(basePath + photo.file, photo.pos, photo.rot, selectedPlateWords[index]));
