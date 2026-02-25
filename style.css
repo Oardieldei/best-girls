@@ -57,6 +57,10 @@ body.mobile-device #hud {
   max-width: min(94vw, 420px);
 }
 
+body.mobile-device #controls-hint {
+  display: none;
+}
+
 .mobile-controls {
   position: fixed;
   inset: auto 0 0;
@@ -87,6 +91,9 @@ body.mobile-device #hud {
   pointer-events: auto;
   width: 60px;
   height: 60px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .mobile-btn:active,
@@ -94,32 +101,9 @@ body.mobile-device #hud {
   background: rgba(18, 18, 18, 0.64);
 }
 
-.mobile-look-area {
-  pointer-events: auto;
-  width: min(44vw, 280px);
-  height: min(30vh, 220px);
-  border-radius: 18px;
-  border: 1px dashed rgba(255, 255, 255, 0.36);
-  background: rgba(20, 20, 20, 0.14);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 10px;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 @media (orientation: portrait) {
   .mobile-controls {
     padding-bottom: 18px;
-  }
-
-  .mobile-look-area {
-    width: min(42vw, 220px);
-    height: min(22vh, 170px);
   }
 }
 
@@ -139,9 +123,4 @@ body.mobile-device #hud {
     font-size: 20px;
   }
 
-  .mobile-look-area {
-    width: min(40vw, 300px);
-    height: min(34vh, 200px);
-    font-size: 12px;
-  }
 }
