@@ -1371,11 +1371,6 @@ const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || navigato
 
 if (isTouchDevice) {
   document.body.classList.add('mobile-device');
-  controlsHint.innerHTML = [
-    'Проведите в правой зоне, чтобы осматриваться.',
-    'Кнопки слева — перемещение по залу.',
-    'Раскладка кнопок адаптируется под портрет и ландшафт.'
-  ].join('<br />');
 } else {
   document.body.addEventListener('click', () => controls.lock());
 }
@@ -1479,11 +1474,7 @@ function createMobileControls() {
 
   movePad.append(upButton, leftButton, downButton, rightButton);
 
-  const lookArea = document.createElement('div');
-  lookArea.className = 'mobile-look-area';
-  lookArea.textContent = 'Зона обзора';
-
-  controlsWrap.append(movePad, lookArea);
+  controlsWrap.append(movePad);
   document.body.appendChild(controlsWrap);
 
   bindMoveButton(upButton, 'forward');
@@ -1495,15 +1486,17 @@ function createMobileControls() {
     touchLook.pointerId = null;
   };
 
-  lookArea.addEventListener('pointerdown', (event) => {
+  const ignoreMovePadTouches = (target) => target instanceof Element && target.closest('.mobile-btn');
+
+  document.body.addEventListener('pointerdown', (event) => {
+    if (ignoreMovePadTouches(event.target)) return;
     event.preventDefault();
     touchLook.pointerId = event.pointerId;
     touchLook.lastX = event.clientX;
     touchLook.lastY = event.clientY;
-    lookArea.setPointerCapture(event.pointerId);
   });
 
-  lookArea.addEventListener('pointermove', (event) => {
+  document.body.addEventListener('pointermove', (event) => {
     if (touchLook.pointerId !== event.pointerId) return;
 
     const deltaX = event.clientX - touchLook.lastX;
@@ -1514,9 +1507,8 @@ function createMobileControls() {
     rotateView(deltaX, deltaY);
   });
 
-  lookArea.addEventListener('pointerup', resetTouchLook);
-  lookArea.addEventListener('pointercancel', resetTouchLook);
-  lookArea.addEventListener('lostpointercapture', resetTouchLook);
+  document.body.addEventListener('pointerup', resetTouchLook);
+  document.body.addEventListener('pointercancel', resetTouchLook);
 }
 
 const keyMap = {
