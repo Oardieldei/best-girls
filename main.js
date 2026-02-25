@@ -1366,8 +1366,20 @@ function addMuseumBarriers() {
 addMuseumBarriers();
 
 const controls = new PointerLockControls(camera, renderer.domElement);
+const controlsHint = document.getElementById('controls-hint');
+const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 
-document.body.addEventListener('click', () => controls.lock());
+if (isTouchDevice) {
+  document.body.classList.add('mobile-device');
+  controlsHint.innerHTML = [
+    'Проведите в правой зоне, чтобы осматриваться.',
+    'Кнопки слева — перемещение по залу.',
+    'Раскладка кнопок адаптируется под портрет и ландшафт.'
+  ].join('<br />');
+} else {
+  document.body.addEventListener('click', () => controls.lock());
+}
+
 controls.addEventListener('lock', () => document.body.classList.add('is-locked'));
 controls.addEventListener('unlock', () => document.body.classList.remove('is-locked'));
 
@@ -1379,6 +1391,133 @@ const jumpVelocity = 0.158;
 let verticalVelocity = 0;
 let isJumping = false;
 let isCrouching = false;
+
+const touchLook = {
+  pointerId: null,
+  lastX: 0,
+  lastY: 0,
+  sensitivity: 0.0032
+};
+
+const rightVector = new THREE.Vector3();
+const forwardVector = new THREE.Vector3();
+
+function rotateView(deltaX, deltaY) {
+  const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+  euler.setFromQuaternion(camera.quaternion);
+
+  euler.y -= deltaX * touchLook.sensitivity;
+  euler.x = clamp(euler.x - deltaY * touchLook.sensitivity, -Math.PI / 2 + 0.05, Math.PI / 2 - 0.05);
+
+  camera.quaternion.setFromEuler(euler);
+}
+
+function moveWithCamera(forwardStep = 0, rightStep = 0) {
+  camera.getWorldDirection(forwardVector);
+  forwardVector.y = 0;
+
+  if (forwardVector.lengthSq() > 0) {
+    forwardVector.normalize();
+  } else {
+    forwardVector.set(0, 0, -1);
+  }
+
+  rightVector.crossVectors(forwardVector, camera.up).normalize();
+
+  if (forwardStep !== 0) camera.position.addScaledVector(forwardVector, forwardStep);
+  if (rightStep !== 0) camera.position.addScaledVector(rightVector, rightStep);
+}
+
+function bindMoveButton(button, direction) {
+  const release = () => {
+    move[direction] = false;
+    button.classList.remove('is-active');
+  };
+
+  button.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    move[direction] = true;
+    button.classList.add('is-active');
+    button.setPointerCapture(event.pointerId);
+  });
+
+  button.addEventListener('pointerup', release);
+  button.addEventListener('pointercancel', release);
+  button.addEventListener('lostpointercapture', release);
+}
+
+function createMobileControls() {
+  const controlsWrap = document.createElement('div');
+  controlsWrap.className = 'mobile-controls';
+
+  const movePad = document.createElement('div');
+  movePad.className = 'mobile-move-pad';
+
+  const upButton = document.createElement('button');
+  upButton.className = 'mobile-btn';
+  upButton.style.gridArea = '1 / 2';
+  upButton.setAttribute('aria-label', 'Вперёд');
+  upButton.textContent = '↑';
+
+  const leftButton = document.createElement('button');
+  leftButton.className = 'mobile-btn';
+  leftButton.style.gridArea = '2 / 1';
+  leftButton.setAttribute('aria-label', 'Влево');
+  leftButton.textContent = '←';
+
+  const downButton = document.createElement('button');
+  downButton.className = 'mobile-btn';
+  downButton.style.gridArea = '2 / 2';
+  downButton.setAttribute('aria-label', 'Назад');
+  downButton.textContent = '↓';
+
+  const rightButton = document.createElement('button');
+  rightButton.className = 'mobile-btn';
+  rightButton.style.gridArea = '2 / 3';
+  rightButton.setAttribute('aria-label', 'Вправо');
+  rightButton.textContent = '→';
+
+  movePad.append(upButton, leftButton, downButton, rightButton);
+
+  const lookArea = document.createElement('div');
+  lookArea.className = 'mobile-look-area';
+  lookArea.textContent = 'Зона обзора';
+
+  controlsWrap.append(movePad, lookArea);
+  document.body.appendChild(controlsWrap);
+
+  bindMoveButton(upButton, 'forward');
+  bindMoveButton(downButton, 'back');
+  bindMoveButton(leftButton, 'left');
+  bindMoveButton(rightButton, 'right');
+
+  const resetTouchLook = () => {
+    touchLook.pointerId = null;
+  };
+
+  lookArea.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    touchLook.pointerId = event.pointerId;
+    touchLook.lastX = event.clientX;
+    touchLook.lastY = event.clientY;
+    lookArea.setPointerCapture(event.pointerId);
+  });
+
+  lookArea.addEventListener('pointermove', (event) => {
+    if (touchLook.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - touchLook.lastX;
+    const deltaY = event.clientY - touchLook.lastY;
+    touchLook.lastX = event.clientX;
+    touchLook.lastY = event.clientY;
+
+    rotateView(deltaX, deltaY);
+  });
+
+  lookArea.addEventListener('pointerup', resetTouchLook);
+  lookArea.addEventListener('pointercancel', resetTouchLook);
+  lookArea.addEventListener('lostpointercapture', resetTouchLook);
+}
 
 const keyMap = {
   KeyW: 'forward',
@@ -1409,6 +1548,10 @@ window.addEventListener('keyup', (event) => {
     isCrouching = false;
   }
 });
+
+if (isTouchDevice) {
+  createMobileControls();
+}
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -1489,13 +1632,22 @@ function animate() {
     dustParticles.dust.geometry.attributes.position.needsUpdate = true;
   }
 
-  if (controls.isLocked) {
+  if (controls.isLocked || isTouchDevice) {
     const previousX = camera.position.x;
     const previousZ = camera.position.z;
-    if (move.forward) controls.moveForward(speed);
-    if (move.back) controls.moveForward(-speed);
-    if (move.left) controls.moveRight(-speed);
-    if (move.right) controls.moveRight(speed);
+
+    if (controls.isLocked) {
+      if (move.forward) controls.moveForward(speed);
+      if (move.back) controls.moveForward(-speed);
+      if (move.left) controls.moveRight(-speed);
+      if (move.right) controls.moveRight(speed);
+    } else {
+      if (move.forward) moveWithCamera(speed, 0);
+      if (move.back) moveWithCamera(-speed, 0);
+      if (move.left) moveWithCamera(0, -speed);
+      if (move.right) moveWithCamera(0, speed);
+    }
+
     applyBounds(previousX, previousZ);
   }
 
