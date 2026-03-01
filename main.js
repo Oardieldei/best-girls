@@ -1045,7 +1045,8 @@ function createPlaceholderTexture(label) {
   return texture;
 }
 
-function addPhoto(url, position, rotationY = 0, plateText = '') {
+function addPhoto(url, position, rotationY = 0, plateText = '', options = {}) {
+  const { onSizeApplied } = options;
   const group = new THREE.Group();
 
   const contactShadow = new THREE.Mesh(
@@ -1125,6 +1126,12 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
     return shape;
   }
 
+  let resolveReady = () => {};
+  const ready = new Promise((resolve) => {
+    resolveReady = resolve;
+  });
+  let isReadyResolved = false;
+
   function applySize(texture) {
     const { width, height } = fitByAspect(texture);
 
@@ -1156,6 +1163,15 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
 
     backLight.width = outerWidth * 0.92;
     backLight.height = outerHeight * 0.92;
+
+    if (typeof onSizeApplied === 'function') {
+      onSizeApplied({ width: outerWidth, height: outerHeight });
+    }
+
+    if (!isReadyResolved) {
+      isReadyResolved = true;
+      resolveReady();
+    }
   }
 
   textureLoader.load(
@@ -1193,23 +1209,41 @@ function addPhoto(url, position, rotationY = 0, plateText = '') {
   group.rotation.y = rotationY;
   scene.add(group);
 
+  let plate = null;
+  const plateOffset = 0.08;
   if (plateText) {
-    const plate = createPlate(plateText);
+    plate = createPlate(plateText);
     const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
     plate.position.set(
-      position.x + inwardNormal.x * 0.08,
+      position.x + inwardNormal.x * plateOffset,
       position.y - 1.75,
-      position.z + inwardNormal.z * 0.08
+      position.z + inwardNormal.z * plateOffset
     );
     plate.rotation.y = rotationY;
     scene.add(plate);
   }
+  return {
+    group,
+    ready,
+    setPosition(nextPosition) {
+      group.position.set(nextPosition.x, nextPosition.y, nextPosition.z);
+      contactShadow.position.x = nextPosition.x;
+      contactShadow.position.z = nextPosition.z;
+
+      if (plate) {
+        const inwardNormal = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), rotationY);
+        plate.position.set(
+          nextPosition.x + inwardNormal.x * plateOffset,
+          nextPosition.y - 1.75,
+          nextPosition.z + inwardNormal.z * plateOffset
+        );
+      }
+    }
+  };
 }
 
 const basePath = `images/${galleryId}/`;
 const wallInset = 0.08;
-const shortWallSegment = roomWidth / 3;
-const shortWallPhotoOffset = shortWallSegment / 2;
 const doorWallCornerZ = roomDepth / 2;
 const doorWallSpan = doorWallCornerZ - sideDoorMaxZ;
 const doorWallPaintingGap = (doorWallSpan / 3) * 1.2;
@@ -1221,17 +1255,63 @@ const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
 const selectedPlateWords = getRandomUniqueWords(plateTextWords, 8);
 const paintingHeightY = 3.6 * 0.8;
 const photos = [
-  { file: '1.jpg', pos: { x: -shortWallPhotoOffset, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0 },
-  { file: '2.jpg', pos: { x: shortWallPhotoOffset, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0 },
+  { file: '1.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front' },
+  { file: '2.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front' },
   { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
   { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: shortWallPhotoOffset, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI },
-  { file: '6.jpg', pos: { x: -shortWallPhotoOffset, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI },
+  { file: '5.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back' },
+  { file: '6.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back' },
   { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
   { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
 ];
 
-photos.forEach((photo, index) => addPhoto(basePath + photo.file, photo.pos, photo.rot, selectedPlateWords[index]));
+const shortWallLayoutState = {
+  front: { photoIndexes: [], widths: {} },
+  back: { photoIndexes: [], widths: {} }
+};
+
+function layoutShortWallPaintings(wallKey) {
+  const wallLayout = shortWallLayoutState[wallKey];
+  if (!wallLayout || wallLayout.photoIndexes.length !== 2) {
+    return;
+  }
+
+  const [firstIndex, secondIndex] = wallLayout.photoIndexes;
+  const firstWidth = wallLayout.widths[firstIndex];
+  const secondWidth = wallLayout.widths[secondIndex];
+  if (!firstWidth || !secondWidth) {
+    return;
+  }
+
+  const equalGap = Math.max(0.12, (roomWidth - firstWidth - secondWidth) / 3);
+  const firstCenterX = -roomWidth / 2 + equalGap + firstWidth / 2;
+  const secondCenterX = firstCenterX + firstWidth / 2 + equalGap + secondWidth / 2;
+
+  [firstIndex, secondIndex].forEach((photoIndex, order) => {
+    const photo = photos[photoIndex];
+    photo.pos.x = order === 0 ? firstCenterX : secondCenterX;
+    if (photo.instance) {
+      photo.instance.setPosition(photo.pos);
+    }
+  });
+}
+
+photos.forEach((photo, index) => {
+  if (photo.wallKey) {
+    shortWallLayoutState[photo.wallKey].photoIndexes.push(index);
+  }
+
+  photo.instance = addPhoto(basePath + photo.file, photo.pos, photo.rot, selectedPlateWords[index], {
+    onSizeApplied: ({ width }) => {
+      if (!photo.wallKey) {
+        return;
+      }
+
+      shortWallLayoutState[photo.wallKey].widths[index] = width;
+      layoutShortWallPaintings(photo.wallKey);
+    }
+  });
+});
 
 const barrierColliders = [];
 
@@ -1365,7 +1445,7 @@ function addMuseumBarriers() {
   scene.add(baseInstances, shaftInstances, topInstances, postContactShadows);
 }
 
-addMuseumBarriers();
+Promise.all(photos.map((photo) => photo.instance.ready)).then(() => addMuseumBarriers());
 
 const controls = new PointerLockControls(camera, renderer.domElement);
 const controlsHint = document.getElementById('controls-hint');
