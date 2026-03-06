@@ -1045,6 +1045,103 @@ function createPlaceholderTexture(label) {
   return texture;
 }
 
+function buildWrappedTextLayout(ctx, text, maxWidth, maxHeight) {
+  const words = text.split(/\s+/).filter(Boolean);
+  let fontSize = 280;
+  const minFontSize = 72;
+  const lineHeightMultiplier = 1.18;
+  const maxLines = 6;
+
+  while (fontSize >= minFontSize) {
+    ctx.font = `700 ${fontSize}px Inter, sans-serif`;
+    const lines = [];
+    let currentLine = '';
+
+    words.forEach((word) => {
+      const candidateLine = currentLine ? `${currentLine} ${word}` : word;
+      const candidateWidth = ctx.measureText(candidateLine).width;
+
+      if (candidateWidth <= maxWidth || !currentLine) {
+        currentLine = candidateLine;
+        return;
+      }
+
+      lines.push(currentLine);
+      currentLine = word;
+    });
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    const lineHeight = fontSize * lineHeightMultiplier;
+    const totalHeight = lines.length * lineHeight;
+    if (lines.length <= maxLines && totalHeight <= maxHeight) {
+      return { lines, fontSize, lineHeight };
+    }
+
+    fontSize -= 8;
+  }
+
+  ctx.font = `700 ${minFontSize}px Inter, sans-serif`;
+  return {
+    lines: [text],
+    fontSize: minFontSize,
+    lineHeight: minFontSize * lineHeightMultiplier
+  };
+}
+
+function createWallTextTexture(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4096;
+  canvas.height = 2048;
+  const ctx = canvas.getContext('2d');
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#efe8da';
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+
+  const horizontalPadding = canvas.width * 0.12;
+  const verticalPadding = canvas.height * 0.22;
+  const layout = buildWrappedTextLayout(
+    ctx,
+    text,
+    canvas.width - horizontalPadding * 2,
+    canvas.height - verticalPadding * 2
+  );
+
+  ctx.font = `700 ${layout.fontSize}px Inter, sans-serif`;
+  const totalHeight = layout.lines.length * layout.lineHeight;
+  const startY = (canvas.height - totalHeight) / 2 + layout.lineHeight / 2;
+  layout.lines.forEach((line, index) => {
+    ctx.fillText(line, canvas.width / 2, startY + index * layout.lineHeight);
+  });
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = maxAnisotropy;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  return texture;
+}
+
+function createWallLabel(text) {
+  const texture = createWallTextTexture(text);
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false
+  });
+
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+  scene.add(mesh);
+  return mesh;
+}
+
 function addPhoto(url, position, rotationY = 0, plateText = '', options = {}) {
   const { onSizeApplied } = options;
   const group = new THREE.Group();
@@ -1255,15 +1352,85 @@ const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
 const selectedPlateWords = getRandomUniqueWords(plateTextWords, 8);
 const paintingHeightY = 3.6 * 0.8;
 const photos = [
-  { file: '1.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front' },
-  { file: '2.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front' },
-  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2 },
-  { file: '5.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back' },
-  { file: '6.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back' },
-  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallPositivePaintingZ }, rot: Math.PI / 2 },
-  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2 }
+  { file: '1.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front', labelWall: 'front' },
+  { file: '2.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: -roomDepth / 2 + wallInset }, rot: 0, wallKey: 'front', labelWall: 'front' },
+  { file: '3.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: firstDoorWallPaintingZ }, rot: -Math.PI / 2, labelWall: 'right' },
+  { file: '4.jpg', pos: { x: roomWidth / 2 - wallInset, y: paintingHeightY, z: secondDoorWallPaintingZ }, rot: -Math.PI / 2, labelWall: 'right' },
+  { file: '5.jpg', pos: { x: roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back', labelWall: 'back' },
+  { file: '6.jpg', pos: { x: -roomWidth / 4, y: paintingHeightY, z: roomDepth / 2 - wallInset }, rot: Math.PI, wallKey: 'back', labelWall: 'back' },
+  { file: '7.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallPositivePaintingZ }, rot: Math.PI / 2, labelWall: 'left' },
+  { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2, labelWall: 'left' }
 ];
+
+const wallLabelConfigs = {
+  front: {
+    text: 'Стена 1',
+    mesh: createWallLabel('Стена 1'),
+    center: new THREE.Vector3(0, roomHeight - 1, -roomDepth / 2 + wallThickness / 2 + 0.01),
+    rotationY: 0,
+    wallSpan: roomWidth
+  },
+  right: {
+    text: 'Стена 2',
+    mesh: createWallLabel('Стена 2'),
+    center: new THREE.Vector3(roomWidth / 2 - wallThickness / 2 - 0.01, roomHeight - 1, 0),
+    rotationY: -Math.PI / 2,
+    wallSpan: roomDepth
+  },
+  back: {
+    text: 'Стена 3',
+    mesh: createWallLabel('Стена 3'),
+    center: new THREE.Vector3(0, roomHeight - 1, roomDepth / 2 - wallThickness / 2 - 0.01),
+    rotationY: Math.PI,
+    wallSpan: roomWidth
+  },
+  left: {
+    text: 'Стена 4',
+    mesh: createWallLabel('Стена 4'),
+    center: new THREE.Vector3(-roomWidth / 2 + wallThickness / 2 + 0.01, roomHeight - 1, 0),
+    rotationY: Math.PI / 2,
+    wallSpan: roomDepth
+  }
+};
+
+const highestPaintingTopByWall = {
+  front: 0,
+  right: 0,
+  back: 0,
+  left: 0
+};
+
+function updateWallLabelPlacement(wallName) {
+  const config = wallLabelConfigs[wallName];
+  if (!config) {
+    return;
+  }
+
+  const highestPaintingTop = highestPaintingTopByWall[wallName];
+  if (!highestPaintingTop) {
+    return;
+  }
+
+  const freeVerticalSpace = Math.max(0.3, roomHeight - highestPaintingTop);
+  const labelHeight = Math.max(0.24, Math.min(0.95, freeVerticalSpace * 0.84));
+  const labelWidth = Math.min(config.wallSpan * 0.56, labelHeight * 3.4);
+  const centerY = highestPaintingTop + freeVerticalSpace / 2;
+
+  config.mesh.geometry.dispose();
+  config.mesh.geometry = new THREE.PlaneGeometry(labelWidth, labelHeight);
+  config.mesh.position.set(config.center.x, centerY, config.center.z);
+  config.mesh.rotation.y = config.rotationY;
+}
+
+const windowDateLabel = createWallLabel('08.03.2026');
+windowDateLabel.geometry.dispose();
+windowDateLabel.geometry = new THREE.PlaneGeometry(1.35, 0.42);
+windowDateLabel.position.set(
+  -roomWidth / 2 + wallThickness / 2 + 0.01,
+  windowBottomY / 2,
+  0
+);
+windowDateLabel.rotation.y = Math.PI / 2;
 
 const shortWallLayoutState = {
   front: { photoIndexes: [], widths: {} },
@@ -1302,7 +1469,11 @@ photos.forEach((photo, index) => {
   }
 
   photo.instance = addPhoto(basePath + photo.file, photo.pos, photo.rot, selectedPlateWords[index], {
-    onSizeApplied: ({ width }) => {
+    onSizeApplied: ({ width, height }) => {
+      const topY = photo.pos.y + height / 2;
+      highestPaintingTopByWall[photo.labelWall] = Math.max(highestPaintingTopByWall[photo.labelWall], topY);
+      updateWallLabelPlacement(photo.labelWall);
+
       if (!photo.wallKey) {
         return;
       }
