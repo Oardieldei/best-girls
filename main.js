@@ -1510,8 +1510,9 @@ const photos = [
   { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2, labelWall: 'left' }
 ];
 
-const wallOneText = `❤️ ${(galleryLabelData[galleryId]?.name || 'Привет!')} ❤️`;
-const wallThreeText = `🔥 ${(galleryLabelData[galleryId]?.career || 'Ты Лучше Всех')} 🔥`;
+const noBreakSpace = '\u00A0';
+const wallOneText = `❤️${noBreakSpace}${(galleryLabelData[galleryId]?.name || 'Привет!')}${noBreakSpace}❤️`;
+const wallThreeText = `🔥${noBreakSpace}${(galleryLabelData[galleryId]?.career || 'Ты Лучше Всех')}${noBreakSpace}🔥`;
 const wallFourText = buildRandomWishText();
 
 const wallLabelConfigs = {
@@ -1577,9 +1578,9 @@ function updateWallLabelPlacement(wallName) {
 }
 
 const windowDateLabel = createWallLabel('♥ 08.03.2026 ♥', {
-  color: '#7f5d38',
+  color: '#4a2f16',
   shadowBlur: 6,
-  shadowColor: 'rgba(0,0,0,0.16)'
+  shadowColor: 'rgba(0,0,0,0.28)'
 });
 windowDateLabel.geometry.dispose();
 windowDateLabel.geometry = new THREE.PlaneGeometry(1.35, 0.42);
