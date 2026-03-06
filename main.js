@@ -224,6 +224,18 @@ function buildRandomWishText() {
   return uppercaseFirstLetter(`${first}, ${second} и ${third}!`);
 }
 
+async function ensureCanvasFontsReady() {
+  if (!document.fonts) {
+    return;
+  }
+
+  await Promise.all([
+    document.fonts.load('700 200px Inter'),
+    document.fonts.load('600 200px Inter')
+  ]);
+  await document.fonts.ready;
+}
+
 function createTextTexture(text) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
@@ -1237,6 +1249,7 @@ function createWallTextTexture(text, options = {}) {
   ctx.fillStyle = color;
   ctx.shadowBlur = shadowBlur;
   ctx.shadowColor = shadowColor;
+  ctx.font = '700 280px Inter, sans-serif';
 
   const horizontalPadding = canvas.width * 0.035;
   const verticalPadding = canvas.height * 0.22;
@@ -1483,6 +1496,7 @@ const firstDoorWallPaintingZ = doorWallPaintingCenterZ - doorWallPaintingGap / 2
 const secondDoorWallPaintingZ = doorWallPaintingCenterZ + doorWallPaintingGap / 2;
 const windowWallPositivePaintingZ = (roomDepth / 2 + windowHalfSpanZ) / 2;
 const windowWallNegativePaintingZ = -(roomDepth / 2 + windowHalfSpanZ) / 2;
+await ensureCanvasFontsReady();
 const selectedPlateWords = getRandomUniqueWords(plateTextWords, 8);
 const paintingHeightY = 3.6 * 0.8;
 const photos = [
