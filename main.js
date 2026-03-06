@@ -1284,7 +1284,7 @@ function createWallLabel(text, options = {}) {
     depthWrite: false
   });
 
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), material);
   scene.add(mesh);
   return mesh;
 }
@@ -1565,15 +1565,12 @@ function updateWallLabelPlacement(wallName) {
 
   const freeVerticalSpace = Math.max(0.3, roomHeight - highestPaintingTop);
   const labelHeight = Math.max(0.72, Math.min(2.85, freeVerticalSpace * 0.84));
-  const maxLabelWidth = config.wallSpan * 0.96;
-  const textureAspectRatio = 4096 / 2048;
-  const labelWidth = Math.min(maxLabelWidth, labelHeight * textureAspectRatio);
+  const labelWidth = config.wallSpan * 0.9;
   const centerY = highestPaintingTop + freeVerticalSpace / 2;
 
-  config.mesh.geometry.dispose();
-  config.mesh.geometry = new THREE.PlaneGeometry(labelWidth, labelHeight);
   config.mesh.position.set(config.center.x, centerY, config.center.z);
   config.mesh.rotation.y = config.rotationY;
+  config.mesh.scale.set(labelWidth / 4, labelHeight / 2, 1);
 }
 
 const windowDateLabel = createWallLabel('♥ 08.03.2026 ♥', {
