@@ -1496,8 +1496,8 @@ const photos = [
   { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2, labelWall: 'left' }
 ];
 
-const wallOneText = `❤️ ${(galleryLabelData[galleryId]?.name || 'Девушка')} ❤️`;
-const wallThreeText = `🔥 ${(galleryLabelData[galleryId]?.career || 'С праздником')} 🔥`;
+const wallOneText = `❤️ ${(galleryLabelData[galleryId]?.name || 'Привет!')} ❤️`;
+const wallThreeText = `🔥 ${(galleryLabelData[galleryId]?.career || 'Ты Лучше Всех')} 🔥`;
 const wallFourText = buildRandomWishText();
 
 const wallLabelConfigs = {
@@ -1509,8 +1509,8 @@ const wallLabelConfigs = {
     wallSpan: roomWidth
   },
   right: {
-    text: 'С международным женским днем!',
-    mesh: createWallLabel('С международным женским днем!'),
+    text: 'С международным женским днём!',
+    mesh: createWallLabel('С международным женским днём!'),
     center: new THREE.Vector3(roomWidth / 2 - wallThickness / 2 - 0.01, roomHeight - 1, 0),
     rotationY: -Math.PI / 2,
     wallSpan: roomDepth
