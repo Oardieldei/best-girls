@@ -1509,8 +1509,8 @@ const wallLabelConfigs = {
     wallSpan: roomWidth
   },
   right: {
-    text: 'Поздравляем с 8 марта!',
-    mesh: createWallLabel('Поздравляем с 8 марта!'),
+    text: 'С международным женским днем!',
+    mesh: createWallLabel('С международным женским днем!'),
     center: new THREE.Vector3(roomWidth / 2 - wallThickness / 2 - 0.01, roomHeight - 1, 0),
     rotationY: -Math.PI / 2,
     wallSpan: roomDepth
@@ -1563,7 +1563,7 @@ function updateWallLabelPlacement(wallName) {
 }
 
 const windowDateLabel = createWallLabel('♥ 08.03.2026 ♥', {
-  color: frameAccentColor,
+  color: '#7f5d38',
   shadowBlur: 6,
   shadowColor: 'rgba(0,0,0,0.16)'
 });
