@@ -1240,7 +1240,7 @@ function createWallTextTexture(text, options = {}) {
   } = options;
   const canvas = document.createElement('canvas');
   canvas.width = 4096;
-  canvas.height = 1024;
+  canvas.height = 2048;
   const ctx = canvas.getContext('2d');
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
