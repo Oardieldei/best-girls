@@ -1191,7 +1191,7 @@ function buildWrappedTextLayout(ctx, text, maxWidth, maxHeight) {
   let fontSize = 280;
   const minFontSize = 72;
   const lineHeightMultiplier = 1.18;
-  const maxLines = 6;
+  const maxLines = 20;
 
   while (fontSize >= minFontSize) {
     ctx.font = `700 ${fontSize}px Inter, sans-serif`;
@@ -1240,7 +1240,7 @@ function createWallTextTexture(text, options = {}) {
   } = options;
   const canvas = document.createElement('canvas');
   canvas.width = 4096;
-  canvas.height = 2048;
+  canvas.height = 1024;
   const ctx = canvas.getContext('2d');
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
