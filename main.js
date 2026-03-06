@@ -86,6 +86,122 @@ const plateTextWords = [
   'Ambitious', 'Smart', 'Intelligent', 'Wise', 'Creative', 'Talented', 'Inspiring', 'Magnetic', 'Unforgettable'
 ];
 
+const galleryLabelData = {
+  'varaksina-natalia': {
+    name: 'Наталья',
+    career: 'Верховная Императрица'
+  },
+  'shubochkina-maria': {
+    name: 'Мария',
+    career: 'Управляющая Финансовой Стабильностью'
+  },
+  'lobanova-marina': {
+    name: 'Марина',
+    career: 'Повелительница Производственных Потоков'
+  },
+  'bakhareva-natalia': {
+    name: 'Наталья',
+    career: 'Кующая Интерфейсы'
+  },
+  'levanova-elena': {
+    name: 'Елена',
+    career: 'Повелительница Браузерной Вселенной'
+  },
+  'kalashina-svetlana': {
+    name: 'Светлана',
+    career: 'Командующая Проектными Экспедициями'
+  },
+  'likova-anna': {
+    name: 'Анна',
+    career: 'Наводящая Языковые Мосты'
+  },
+  'volkova-elizaveta': {
+    name: 'Елизавета',
+    career: 'Повелевающая Мнением Аудитории'
+  },
+  'grigoreva-nataliia': {
+    name: 'Наталья',
+    career: 'Мастерица Боевых Кампаний'
+  },
+  'ponomareva-ekaterina': {
+    name: 'Екатерина',
+    career: 'Оракул Маркетинговых Данных'
+  },
+  'selezneva-tatti': {
+    name: 'Татти',
+    career: 'Создающая Рекламную Эффективность'
+  },
+  'karabash-olga': {
+    name: 'Ольга',
+    career: 'Заклинательница Цифровых Метрик'
+  },
+  'kolgina-viktoria': {
+    name: 'Виктория',
+    career: 'Повелительница Визуальной Вселенной'
+  },
+  'istrelova-anastasiya': {
+    name: 'Анастасия',
+    career: 'Дирижирующая Графической Симфонией'
+  },
+  'buldakova-julia': {
+    name: 'Юлия',
+    career: 'Созидательница Эстетических Легенд'
+  },
+  'kamlykova-kristina': {
+    name: 'Кристина',
+    career: 'Художница Цифровой Эстетики'
+  },
+  'kozlova-darya': {
+    name: 'Дарья',
+    career: 'Управляющая Визуальным Наслаждением'
+  },
+  'mukhidaeva-tatiana': {
+    name: 'Татьяна',
+    career: 'Укротительница Пикселей'
+  },
+  'lebedeva-victoria': {
+    name: 'Виктория',
+    career: 'Открывающая Карьерные Пути'
+  },
+  'zhulina-tatiana': {
+    name: 'Татьяна',
+    career: 'Ищущая Таланты'
+  },
+  'shebashova-anastasia': {
+    name: 'Анастасия',
+    career: 'Стражница Безупречной Работы'
+  },
+  'afanasjeva-natalia': {
+    name: 'Наталья',
+    career: 'Мастерица Точных Балансов'
+  },
+  'romanova-elena': {
+    name: 'Елена',
+    career: 'Заведующая Финансовым Порядком'
+  },
+  'kyevda-zhanna': {
+    name: 'Жаннулька',
+    career: 'Прекрасная и Чудесная Женщина'
+  },
+  test: {
+    name: 'Ришенька',
+    career: 'Самая Лучшая На Свете'
+  },
+  'oganova-olga': {
+    name: 'Ольга',
+    career: 'Стражница Буквы Закона'
+  }
+};
+
+const wishes = [
+  'здоровья', 'удачи', 'любви', 'тепла', 'уюта', 'достатка', 'успеха', 'вдохновения', 'спокойствия', 'терпения',
+  'сил', 'мудрости', 'смелости', 'уверенности', 'надежды', 'процветания', 'изобилия', 'побед', 'достижений', 'ярких дней',
+  'светлых мыслей', 'больше улыбок', 'меньше забот', 'меньше тревог', 'много смеха', 'яркой жизни', 'приятных встреч', 'новых идей', 'смелых планов', 'больших успехов',
+  'хороших новостей', 'крепких нервов', 'чистого неба', 'верных друзей', 'добрых людей', 'исполнения желаний', 'внутреннего света', 'ярких эмоций', 'вкусной жизни', 'сладких моментов',
+  'радостных событий', 'сильного духа', 'лёгкого пути', 'ясных мыслей', 'полной гармонии', 'солнечных дней', 'настоящей радости', 'настоящего счастья', 'долгой жизни', 'яркого будущего',
+  'доброй судьбы', 'отличного настроения', 'тепла в душе', 'огня в сердце', 'света в душе', 'мира в душе'
+];
+
 function getRandomUniqueWords(words, count) {
   const shuffled = [...words];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -93,6 +209,18 @@ function getRandomUniqueWords(words, count) {
     [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
   }
   return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
+function uppercaseFirstLetter(text) {
+  if (!text) {
+    return text;
+  }
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+}
+
+function buildRandomWishText() {
+  const [first, second, third] = getRandomUniqueWords(wishes, 3);
+  return uppercaseFirstLetter(`${first}, ${second} и ${third}!`);
 }
 
 function createTextTexture(text) {
@@ -1091,7 +1219,12 @@ function buildWrappedTextLayout(ctx, text, maxWidth, maxHeight) {
   };
 }
 
-function createWallTextTexture(text) {
+function createWallTextTexture(text, options = {}) {
+  const {
+    color = '#efe8da',
+    shadowBlur = 15,
+    shadowColor = 'rgba(0,0,0,0.25)'
+  } = options;
   const canvas = document.createElement('canvas');
   canvas.width = 4096;
   canvas.height = 2048;
@@ -1100,9 +1233,9 @@ function createWallTextTexture(text) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#efe8da';
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.fillStyle = color;
+  ctx.shadowBlur = shadowBlur;
+  ctx.shadowColor = shadowColor;
 
   const horizontalPadding = canvas.width * 0.12;
   const verticalPadding = canvas.height * 0.22;
@@ -1129,8 +1262,8 @@ function createWallTextTexture(text) {
   return texture;
 }
 
-function createWallLabel(text) {
-  const texture = createWallTextTexture(text);
+function createWallLabel(text, options = {}) {
+  const texture = createWallTextTexture(text, options);
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,
@@ -1362,31 +1495,35 @@ const photos = [
   { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2, labelWall: 'left' }
 ];
 
+const wallOneText = `${(galleryLabelData[galleryId]?.name || 'Девушка')}!`;
+const wallThreeText = `${(galleryLabelData[galleryId]?.career || 'С праздником')}!`;
+const wallFourText = buildRandomWishText();
+
 const wallLabelConfigs = {
   front: {
-    text: 'Стена 1',
-    mesh: createWallLabel('Стена 1'),
+    text: wallOneText,
+    mesh: createWallLabel(wallOneText),
     center: new THREE.Vector3(0, roomHeight - 1, -roomDepth / 2 + wallThickness / 2 + 0.01),
     rotationY: 0,
     wallSpan: roomWidth
   },
   right: {
-    text: 'Стена 2',
-    mesh: createWallLabel('Стена 2'),
+    text: 'Поздравляем с 8 марта!',
+    mesh: createWallLabel('Поздравляем с 8 марта!'),
     center: new THREE.Vector3(roomWidth / 2 - wallThickness / 2 - 0.01, roomHeight - 1, 0),
     rotationY: -Math.PI / 2,
     wallSpan: roomDepth
   },
   back: {
-    text: 'Стена 3',
-    mesh: createWallLabel('Стена 3'),
+    text: wallThreeText,
+    mesh: createWallLabel(wallThreeText),
     center: new THREE.Vector3(0, roomHeight - 1, roomDepth / 2 - wallThickness / 2 - 0.01),
     rotationY: Math.PI,
     wallSpan: roomWidth
   },
   left: {
-    text: 'Стена 4',
-    mesh: createWallLabel('Стена 4'),
+    text: wallFourText,
+    mesh: createWallLabel(wallFourText),
     center: new THREE.Vector3(-roomWidth / 2 + wallThickness / 2 + 0.01, roomHeight - 1, 0),
     rotationY: Math.PI / 2,
     wallSpan: roomDepth
@@ -1422,9 +1559,14 @@ function updateWallLabelPlacement(wallName) {
   config.mesh.rotation.y = config.rotationY;
 }
 
-const windowDateLabel = createWallLabel('08.03.2026');
+const windowDateLabel = createWallLabel('♥ 08.03.2026 ♥', {
+  color: '#5c4b3a',
+  shadowBlur: 6,
+  shadowColor: 'rgba(0,0,0,0.16)'
+});
 windowDateLabel.geometry.dispose();
 windowDateLabel.geometry = new THREE.PlaneGeometry(1.35, 0.42);
+windowDateLabel.scale.set(4, 4, 1);
 windowDateLabel.position.set(
   -roomWidth / 2 + wallThickness / 2 + 0.01,
   windowBottomY / 2,
