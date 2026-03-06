@@ -1551,7 +1551,9 @@ function updateWallLabelPlacement(wallName) {
 
   const freeVerticalSpace = Math.max(0.3, roomHeight - highestPaintingTop);
   const labelHeight = Math.max(0.72, Math.min(2.85, freeVerticalSpace * 0.84));
-  const labelWidth = config.wallSpan * 0.96;
+  const maxLabelWidth = config.wallSpan * 0.96;
+  const textureAspectRatio = 4096 / 2048;
+  const labelWidth = Math.min(maxLabelWidth, labelHeight * textureAspectRatio);
   const centerY = highestPaintingTop + freeVerticalSpace / 2;
 
   config.mesh.geometry.dispose();
