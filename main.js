@@ -1191,7 +1191,7 @@ function buildWrappedTextLayout(ctx, text, maxWidth, maxHeight) {
   let fontSize = 280;
   const minFontSize = 72;
   const lineHeightMultiplier = 1.18;
-  const maxLines = 20;
+  const maxLines = 6;
 
   while (fontSize >= minFontSize) {
     ctx.font = `700 ${fontSize}px Inter, sans-serif`;
