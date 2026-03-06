@@ -1495,7 +1495,7 @@ const photos = [
   { file: '8.jpg', pos: { x: -roomWidth / 2 + wallInset, y: paintingHeightY, z: windowWallNegativePaintingZ }, rot: Math.PI / 2, labelWall: 'left' }
 ];
 
-const wallOneText = `♡ ${(galleryLabelData[galleryId]?.name || 'Девушка')} ♡`;
+const wallOneText = `❤️ ${(galleryLabelData[galleryId]?.name || 'Девушка')} ❤️`;
 const wallThreeText = `🔥 ${(galleryLabelData[galleryId]?.career || 'С праздником')} 🔥`;
 const wallFourText = buildRandomWishText();
 
@@ -1550,7 +1550,7 @@ function updateWallLabelPlacement(wallName) {
 
   const freeVerticalSpace = Math.max(0.3, roomHeight - highestPaintingTop);
   const labelHeight = Math.max(0.72, Math.min(2.85, freeVerticalSpace * 0.84));
-  const labelWidth = Math.min(config.wallSpan * 0.72, labelHeight * 3.4);
+  const labelWidth = Math.min(config.wallSpan * 0.86, labelHeight * 4.2);
   const centerY = highestPaintingTop + freeVerticalSpace / 2;
 
   config.mesh.geometry.dispose();
