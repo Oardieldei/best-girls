@@ -80,6 +80,7 @@ const plateMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.65,
   metalness: 0.1
 });
+const frameAccentColor = '#d2b693';
 const plateTextWords = [
   'Beautiful', 'Gorgeous', 'Stunning', 'Lovely', 'Charming', 'Graceful', 'Elegant', 'Radiant', 'Adorable', 'Sweet',
   'Warm', 'Genuine', 'Compassionate', 'Pure', 'Strong', 'Brave', 'Fearless', 'Confident', 'Independent', 'Resilient',
@@ -1221,7 +1222,7 @@ function buildWrappedTextLayout(ctx, text, maxWidth, maxHeight) {
 
 function createWallTextTexture(text, options = {}) {
   const {
-    color = '#efe8da',
+    color = frameAccentColor,
     shadowBlur = 15,
     shadowColor = 'rgba(0,0,0,0.25)'
   } = options;
@@ -1237,7 +1238,7 @@ function createWallTextTexture(text, options = {}) {
   ctx.shadowBlur = shadowBlur;
   ctx.shadowColor = shadowColor;
 
-  const horizontalPadding = canvas.width * 0.12;
+  const horizontalPadding = canvas.width * 0.035;
   const verticalPadding = canvas.height * 0.22;
   const layout = buildWrappedTextLayout(
     ctx,
@@ -1550,7 +1551,7 @@ function updateWallLabelPlacement(wallName) {
 
   const freeVerticalSpace = Math.max(0.3, roomHeight - highestPaintingTop);
   const labelHeight = Math.max(0.72, Math.min(2.85, freeVerticalSpace * 0.84));
-  const labelWidth = Math.min(config.wallSpan * 0.86, labelHeight * 4.2);
+  const labelWidth = config.wallSpan * 0.96;
   const centerY = highestPaintingTop + freeVerticalSpace / 2;
 
   config.mesh.geometry.dispose();
@@ -1560,7 +1561,7 @@ function updateWallLabelPlacement(wallName) {
 }
 
 const windowDateLabel = createWallLabel('♥ 08.03.2026 ♥', {
-  color: '#5c4b3a',
+  color: frameAccentColor,
   shadowBlur: 6,
   shadowColor: 'rgba(0,0,0,0.16)'
 });
