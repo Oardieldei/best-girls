@@ -5,7 +5,7 @@ import { RGBELoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/
 
 function getGalleryId() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('id') || 'test';
+  return params.get('id') || 'varaksina-natalia';
 }
 
 function clamp(value, min, max) {
